@@ -1,0 +1,6 @@
+[submodule "vendor/antfu-skills"]
+	path = vendor/antfu-skills
+	url = https://github.com/antfu/skills.git
+[submodule "vendor/sanity-agent-toolkit"]
+	path = vendor/sanity-agent-toolkit
+	url = https://github.com/sanity-io/agent-toolkit.git
