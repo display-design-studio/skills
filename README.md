@@ -1,11 +1,13 @@
-# Skills
+<div align="center">
+  <a href="https://github.com/display-design-studio/skills">
+    <img src="https://avatars.githubusercontent.com/u/118281951?s=400&u=3ba5b42657ae2ac1a064b998b6110ea422317790&v=0" alt="Logo" width="80" height="80">
+  </a>
+  <h3 align="center">Display Studio Skills</h3>
+  <p align="center">A curated skill collection for AI agents, including first-party skills and vendored framework/CMS best practices for use with the Agent Skills ecosystem and <code>skills.sh</code>.
+</p>
+</div>
+<br>
 
-Team skill collection for AI agents, inspired by:
-
-- https://github.com/antfu/skills
-- https://github.com/sanity-io/agent-toolkit
-
-This repository follows the Agent Skills ecosystem conventions and is structured to work well with `skills.sh`.
 
 ## Repository pattern
 

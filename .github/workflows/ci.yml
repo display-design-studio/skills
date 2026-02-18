@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Validate all skills
+        run: |
+          for skill_dir in skills/*; do
+            if [ -d "$skill_dir" ]; then
+              echo "Validating $skill_dir"
+              npx -y skills-ref validate "$skill_dir"
+            fi
+          done
+
+      - name: Smoke test skills discovery
+        run: npx -y skills add . --list
