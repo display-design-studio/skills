@@ -21,6 +21,7 @@
 ### First-party (Display Studio)
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
+- `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
 
 ### Vendored from `antfu/skills`
 
