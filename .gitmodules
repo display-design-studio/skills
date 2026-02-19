@@ -4,3 +4,6 @@
 [submodule "vendor/sanity-agent-toolkit"]
 	path = vendor/sanity-agent-toolkit
 	url = https://github.com/sanity-io/agent-toolkit.git
+[submodule "vendor/antigravity-awesome-skills"]
+	path = vendor/antigravity-awesome-skills
+	url = https://github.com/sickn33/antigravity-awesome-skills.git

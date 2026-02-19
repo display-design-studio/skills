@@ -35,6 +35,10 @@
 - `seo-aeo-best-practices`
 - `content-experimentation-best-practices`
 
+### Vendored from `sickn33/antigravity-awesome-skills`
+
+- `shopify-development`: Shopify apps, extensions, themes, GraphQL API, webhooks, Liquid templating, billing, metafields (API v2026-01).
+
 ## Install (skills CLI)
 
 Install one skill from this repository:
@@ -48,6 +52,12 @@ Install a specific vendored skill:
 ```bash
 npx skills add <owner>/<repo> --skill nuxt
 npx skills add <owner>/<repo> --skill sanity-best-practices
+```
+
+Install a vendored shopify skill:
+
+```bash
+npx skills add <owner>/<repo> --skill shopify-development
 ```
 
 Install all skills from this repository:

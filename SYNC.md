@@ -6,6 +6,7 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 
 - `vendor/antfu-skills` -> `https://github.com/antfu/skills`
 - `vendor/sanity-agent-toolkit` -> `https://github.com/sanity-io/agent-toolkit`
+- `vendor/antigravity-awesome-skills` -> `https://github.com/sickn33/antigravity-awesome-skills`
 
 ## Sync workflow
 
@@ -32,6 +33,10 @@ cp -R vendor/sanity-agent-toolkit/skills/sanity-best-practices skills/sanity-bes
 cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
+
+rm -rf skills/shopify-development
+
+cp -R vendor/antigravity-awesome-skills/skills/shopify-development skills/shopify-development
 ```
 
 3) Validate discovery:
