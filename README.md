@@ -22,6 +22,7 @@
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
 - `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
+- `tailwind`: Tailwind CSS v4 best practices covering utility-first patterns, `@theme` variables, responsive design, dark mode, custom styles, performance, accessibility, and a **Figma → Tailwind theme generation workflow** (paste Figma CSS variables, get `@theme` CSS files organized by category: colors, typography, spacing, radius/shadows, breakpoints).
 
 ### Vendored from `antfu/skills`
 
@@ -78,6 +79,15 @@ npx skills add <owner>/<repo> --list
 - First-party skills maintained by this team should use `metadata.author: display studio`.
 - Vendored skills keep their upstream metadata and attribution.
 - Sources are preserved via `vendor/` submodules for update traceability.
+
+## Figma → Tailwind workflow
+
+The `tailwind` skill includes a purpose-built agent workflow to translate Figma CSS variables into Tailwind v4 `@theme` files. See `skills/tailwind/rules/figma-to-theme-workflow.md` for the full instructions.
+
+**How to use:**
+1. Export CSS variables from Figma (via "Variables to CSS" plugin or Dev Mode copy)
+2. Paste them in chat and ask the agent to generate the Tailwind theme files
+3. The agent classifies variables (colors, typography, spacing, radius, shadows, breakpoints) and writes the corresponding `@theme` CSS files using the templates in `skills/tailwind/figma-tokens/`
 
 ## Authoring guidelines (first-party skills)
 
