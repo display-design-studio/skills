@@ -1,6 +1,13 @@
 ---
 name: content-modeling-best-practices
-description: General principles for structured content modeling that apply across CMSs, with Sanity-specific guidance. Use when designing content schemas, planning content architecture, or evaluating content reuse strategies.
+description: >-
+  Structured content modeling principles with Sanity-specific guidance. Use
+  when designing or reviewing content schemas, document types, field structures,
+  or content architecture — including decisions around references vs embedding,
+  content reuse, taxonomy, page builders, multi-channel delivery, or
+  refactoring existing schemas. Trigger when the user mentions schema design,
+  content model, document types, content structure, headless CMS architecture,
+  or asks how to model any content type.
 license: MIT
 metadata:
   author: sanity

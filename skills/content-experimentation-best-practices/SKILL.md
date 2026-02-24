@@ -1,6 +1,13 @@
 ---
 name: content-experimentation-best-practices
-description: A/B testing and content experimentation methodology for data-driven content optimization. Use when implementing experiments, analyzing results, or building experimentation infrastructure.
+description: >-
+  A/B testing and content experimentation methodology for data-driven
+  optimization. Use when setting up A/B tests, multivariate tests, or
+  experimentation infrastructure — including experiment design, statistical
+  significance, conversion rate optimization (CRO), feature flags, or
+  integrating experiments with a CMS. Trigger when the user mentions A/B test,
+  split test, variant, experiment, CRO, conversion rate, statistical
+  significance, feature flag, or asks how to test or measure content changes.
 license: MIT
 metadata:
   author: sanity

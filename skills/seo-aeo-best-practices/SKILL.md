@@ -1,6 +1,14 @@
 ---
 name: seo-aeo-best-practices
-description: SEO and AEO (Answer Engine Optimization) best practices including EEAT principles, structured data, and technical SEO. Use when implementing metadata, sitemaps, structured data, or optimizing content for search engines and AI assistants.
+description: >-
+  SEO and AEO (Answer Engine Optimization) best practices covering EEAT,
+  structured data, and technical SEO. Use when implementing meta tags, Open
+  Graph, JSON-LD, sitemaps, robots.txt, canonical URLs, or optimizing content
+  for Google, AI assistants (ChatGPT, Perplexity), or featured snippets.
+  Trigger when the user mentions SEO, AEO, EEAT, structured data, schema.org,
+  JSON-LD, meta tags, Open Graph, sitemap, robots.txt, canonical, indexing,
+  search ranking, or asks how to make content discoverable by search engines
+  or AI tools.
 license: MIT
 metadata:
   author: sanity
