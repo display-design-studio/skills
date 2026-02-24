@@ -21,6 +21,7 @@
 ### First-party (Display Studio)
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
+- `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, and caching patterns.
 - `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
 - `tailwind`: Tailwind CSS v4 best practices covering utility-first patterns, `@theme` variables, responsive design, dark mode, custom styles, performance, accessibility, and a **Figma → Tailwind theme generation workflow** (paste Figma CSS variables, get `@theme` CSS files organized by category: colors, typography, spacing, radius/shadows, breakpoints).
 
@@ -49,9 +50,10 @@ Install one skill from this repository:
 npx skills add <owner>/<repo> --skill gsap
 ```
 
-Install a specific vendored skill:
+Install a specific first-party or vendored skill:
 
 ```bash
+npx skills add <owner>/<repo> --skill nuxt-sanity
 npx skills add <owner>/<repo> --skill nuxt
 npx skills add <owner>/<repo> --skill sanity-best-practices
 ```

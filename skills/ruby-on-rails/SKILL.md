@@ -1,24 +1,17 @@
 ---
 name: ruby-on-rails
-description: Comprehensive Ruby on Rails 8.1 best-practices skill covering full-stack MVC development, Active Record, routing, views, background jobs, storage, security, testing, and performance. Use when building, reviewing, or debugging Rails applications.
-license: MIT
-metadata:
-  author: display studio
-  version: "1.0.0"
-  source: https://guides.rubyonrails.org/ (v8.1.2)
+description: >-
+  Comprehensive Ruby on Rails 8.1 best-practices skill covering MVC, Active
+  Record, routing, views, background jobs, storage, security, testing, and
+  performance. Use when the user mentions Rails, Ruby on Rails, ActiveRecord,
+  ActiveJob, ActionMailer, ActionCable, Active Storage, rails generate, rails
+  routes, Hotwire, Turbo, Stimulus, or asks to build, review, debug, or
+  migrate a Rails application or API.
 ---
 
 # Ruby on Rails Best Practices
 
 Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns, Active Record, components (jobs, mailer, cable, storage), security, testing, performance, and debugging.
-
-## When to apply
-
-- Building a new Rails full-stack application or API
-- Adding models, controllers, views, or routes to an existing Rails app
-- Implementing background jobs, email, WebSockets, or file uploads
-- Reviewing Rails code for security, performance, or correctness
-- Debugging unexpected behavior in a Rails application
 
 ## ROUTING: Which rule file to load
 
