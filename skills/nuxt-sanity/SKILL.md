@@ -45,6 +45,9 @@ editing, TypeScript, and Nitro server routes.
 **IF debugging CORS errors, auth token issues, or hydration mismatches:**
 → Read `rules/debug-common-errors.md`
 
+**IF generating a dynamic sitemap from Sanity routes (works, case studies, etc.):**
+→ Read `rules/features-sitemap.md`
+
 ## Rule index
 
 | Topic | Description | File |
@@ -58,6 +61,7 @@ editing, TypeScript, and Nitro server routes.
 | Visual editing | Stega, live preview, Presentation tool, draft mode | [rules/features-visual-editing.md](rules/features-visual-editing.md) |
 | Caching | Query key stability, reactive params, cache invalidation | [rules/perf-query-keys-and-caching.md](rules/perf-query-keys-and-caching.md) |
 | Debug | CORS, auth tokens, hydration errors, common pitfalls | [rules/debug-common-errors.md](rules/debug-common-errors.md) |
+| Sitemap | Dynamic sitemap sources, defineSitemapEventHandler, stegaClean on slugs | [rules/features-sitemap.md](rules/features-sitemap.md) |
 
 ## Rule categories by priority
 

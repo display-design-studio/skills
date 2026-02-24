@@ -24,6 +24,8 @@ Docs: https://sanity.nuxtjs.org/
   → `features-sanity-content.md`
 - Visual editing / stega: https://sanity.nuxtjs.org/visual-editing
   → `features-visual-editing.md`
+- Dynamic sitemap sources + defineSitemapEventHandler: https://nuxtseo.com/sitemap/guides/dynamic-urls
+  → `features-sitemap.md`
 
 ## Performance
 

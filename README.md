@@ -21,7 +21,8 @@
 ### First-party (Display Studio)
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
-- `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, and caching patterns.
+- `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
+- `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
 - `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
 - `tailwind`: Tailwind CSS v4 best practices covering utility-first patterns, `@theme` variables, responsive design, dark mode, custom styles, performance, accessibility, and a **Figma → Tailwind theme generation workflow** (paste Figma CSS variables, get `@theme` CSS files organized by category: colors, typography, spacing, radius/shadows, breakpoints).
 
