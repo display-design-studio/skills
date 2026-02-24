@@ -1,25 +1,17 @@
 ---
 name: tailwind
-description: Tailwind CSS v4 best-practices skill covering utility-first patterns, theme variables, responsive design, dark mode, custom styles, performance, accessibility, and a complete Figma-to-Tailwind theme generation workflow. Use when building, reviewing, or configuring Tailwind CSS projects.
-license: MIT
-metadata:
-  author: display studio
-  version: "1.0.0"
-  source: https://tailwindcss.com/docs (v4.2)
+description: >-
+  Tailwind CSS v4 best-practices skill covering utility-first patterns, @theme
+  variables, responsive design, dark mode, custom styles, performance,
+  accessibility, and a Figma-to-Tailwind theme generation workflow. Use when
+  the user mentions Tailwind, tailwindcss, @theme, utility classes, Tailwind
+  config, Figma design tokens, or asks to build, configure, audit, or migrate
+  a Tailwind CSS project (including v3 to v4 migrations).
 ---
 
 # Tailwind CSS Best Practices
 
 Tailwind CSS v4 guide organized as modular rules. Covers the utility-first model, `@theme` variables, responsive/state variants, custom styles, performance, accessibility, and the **Figma → Tailwind theme workflow** for generating design tokens directly from Figma variables.
-
-## When to apply
-
-- Setting up or configuring Tailwind CSS v4 in a project
-- Building UI components with utility classes
-- Customizing the design system (colors, fonts, spacing, breakpoints)
-- Migrating from Tailwind v3 to v4
-- Translating Figma design tokens into a Tailwind theme
-- Reviewing code for utility-class correctness and theme consistency
 
 ## ROUTING: Which rule file to load
 

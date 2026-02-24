@@ -1,24 +1,16 @@
 ---
 name: gsap
-description: Comprehensive GSAP v3 best-practices skill covering fundamentals, plugins, and useful features/tools. Use when building, reviewing, or optimizing animation systems.
-license: MIT
-metadata:
-  author: display studio
-  version: "1.0.0"
-  source: GSAP docs index https://gsap.com/llms.txt and docs pages under https://gsap.com/docs/v3/
+description: >-
+  Comprehensive GSAP v3 best-practices skill covering fundamentals, plugins, and
+  useful features/tools. Use when the user mentions GSAP, GreenSock, gsap.to,
+  gsap.timeline, ScrollTrigger, ScrollSmoother, Flip, SplitText, MorphSVG,
+  DrawSVG, Draggable, useGSAP, or asks to build, review, or optimize
+  animations, motion, or scroll-driven interactions.
 ---
 
 # GSAP Best Practices
 
 Comprehensive best-practices guide for GSAP v3, organized as modular rules for agents. The structure mirrors the docs taxonomy (fundamentals, plugins, useful features/tools) while prioritizing implementation decisions and code quality.
-
-## When to apply
-
-- Building animation-heavy interfaces
-- Refactoring complex timelines or interaction flows
-- Adding GSAP plugins (ScrollTrigger, Flip, SplitText, etc.)
-- Optimizing animation performance and cleanup in component frameworks
-- Standardizing motion patterns across teams/projects
 
 ## Rule categories by priority
 
