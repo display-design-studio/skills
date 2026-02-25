@@ -78,7 +78,7 @@ npx skills add <owner>/<repo> --list
 
 ## Attribution and authorship
 
-- First-party skills maintained by this team should use `metadata.author: display studio`.
+- First-party skill frontmatter uses only `name` + `description` (Anthropic spec). Attribution is tracked in `rules/_coverage-map.md`.
 - Vendored skills keep their upstream metadata and attribution.
 - Sources are preserved via `vendor/` submodules for update traceability.
 
@@ -115,11 +115,7 @@ The `tailwind` skill includes a purpose-built agent workflow to translate Figma 
    - incorrect pattern
    - correct pattern
    - official docs links
-7. Set frontmatter metadata:
-   - `metadata.author: display studio`
-   - `metadata.version`
-   - `metadata.source`
-8. Update this `README.md` with the new skill.
+7. Update this `README.md` with the new skill.
 
 ## Updating vendored skills
 

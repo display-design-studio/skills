@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-> `useSanity` in server routes uses the module's server-side client (no CDN, with token if configured).
+> `useSanity` in server routes uses the module's server-side client: no CDN, and automatically includes the token from `runtimeConfig.sanity.token` (set via `NUXT_SANITY_TOKEN`) when present.
 
 ---
 
@@ -36,16 +36,21 @@ Configure the token in `runtimeConfig` (private), not `runtimeConfig.public`:
 // nuxt.config.ts
 runtimeConfig: {
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN,
+    token: '', // set via NUXT_SANITY_TOKEN env var at runtime
   },
 },
 
 sanity: {
-  projectId: process.env.SANITY_PROJECT_ID,
+  projectId: process.env.NUXT_PUBLIC_SANITY_PROJECT_ID,
   dataset: 'production',
   apiVersion: '2024-01-01',
   useCdn: false,
 },
+```
+
+```env
+# .env
+NUXT_SANITY_TOKEN=sk...   # private — NEVER use NUXT_PUBLIC_SANITY_TOKEN
 ```
 
 The module automatically uses `runtimeConfig.sanity.token` for server-side requests when set.
@@ -101,7 +106,7 @@ Client calls `/api/preview?slug=hello` — token stays on the server.
 // ❌ Token in runtimeConfig.public — ships to client bundle
 runtimeConfig: {
   public: {
-    sanityToken: process.env.SANITY_API_READ_TOKEN, // exposed to browser
+    sanityToken: 'sk...', // exposed to browser
   },
 },
 ```
@@ -109,10 +114,10 @@ runtimeConfig: {
 ## Correct
 
 ```ts
-// ✅ Token in runtimeConfig (private) — server only
+// ✅ Token in runtimeConfig (private) — server only, set via NUXT_SANITY_TOKEN
 runtimeConfig: {
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN,
+    token: '', // auto-populated from NUXT_SANITY_TOKEN at runtime
   },
 },
 ```

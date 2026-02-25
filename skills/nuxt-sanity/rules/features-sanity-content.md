@@ -40,16 +40,16 @@ interface Post {
 
 ---
 
-## Custom block components
+## Custom block components — current API (`:components`)
 
 Register custom renderers for non-standard block types, marks, and inline objects
-via the `:serializers` (v1 API) or `:components` prop:
+via the `:components` prop (current API, `@nuxtjs/sanity` v2+):
 
 ```vue
 <template>
   <SanityContent
     :blocks="post.body"
-    :serializers="serializers"
+    :components="components"
   />
 </template>
 
@@ -57,7 +57,7 @@ via the `:serializers` (v1 API) or `:components` prop:
 import CalloutBlock from '~/components/CalloutBlock.vue'
 import InternalLink from '~/components/InternalLink.vue'
 
-const serializers = {
+const components = {
   types: {
     callout: CalloutBlock,       // custom block type
   },
@@ -68,12 +68,15 @@ const serializers = {
 </script>
 ```
 
+> **Legacy (v1):** older code may use `:serializers` instead of `:components` — these are the same
+> conceptually but `:serializers` was the v1 API name. Migrate to `:components` for current module versions.
+
 ---
 
 ## Custom decorators (bold, italic, custom marks)
 
 ```ts
-const serializers = {
+const components = {
   marks: {
     highlight: ({ children }: { children: string }) =>
       h('mark', { class: 'bg-yellow-200' }, children),
@@ -98,10 +101,10 @@ const serializers = {
 ## Correct
 
 ```vue
-<!-- ✅ Pass block array directly, apply styles via serializers or parent wrapper -->
+<!-- ✅ Pass block array directly, apply styles via :components or parent wrapper -->
 <SanityContent
   :blocks="post.body"
-  :serializers="serializers"
+  :components="components"
   class="prose"
 />
 ```
@@ -110,8 +113,8 @@ const serializers = {
 
 ## Notes
 
-- `SanityContent` outputs semantic HTML — apply typography styles with a wrapper or via serializers
-- For complex custom blocks (images, embeds), define them in `serializers.types`
+- `SanityContent` outputs semantic HTML — apply typography styles with a wrapper or via `:components`
+- For complex custom blocks (images, embeds), define them in `components.types`
 - Images within Portable Text should use `SanityImage` inside the custom type component
 
 ---
