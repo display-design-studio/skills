@@ -29,11 +29,11 @@ This file provides IF/THEN blocks for the most common failure modes.
 
 **Causes and fixes:**
 
-- Used `useLazySanityQuery` where `useSanityQuery` (with `await`) is needed:
+- Used `useLazySanityQuery` where `useSanityQuery` is needed:
   ```ts
-  // ❌
+  // ❌ useLazySanityQuery skips SSR — data is null on first render
   const { data } = useLazySanityQuery(query, params)
-  // ✅ await to include data in SSR payload
+  // ✅ useSanityQuery fetches on server and includes data in SSR payload
   const { data } = await useSanityQuery(query, params)
   ```
 
@@ -108,9 +108,9 @@ token visible in `__nuxt_state` payload.
 // nuxt.config.ts — token must be in private runtimeConfig
 runtimeConfig: {
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN, // ✅ private
+    token: '', // ✅ private — set via NUXT_SANITY_TOKEN env var
   },
-  // public: { sanityToken: '...' }            // ❌ exposed to browser
+  // public: { sanityToken: '...' }  // ❌ exposed to browser
 },
 ```
 

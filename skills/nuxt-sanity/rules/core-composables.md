@@ -15,7 +15,7 @@ and hydration errors on the client. `useSanity()` is the raw client; using it di
 const query = `*[_type == "post" && slug.current == $slug][0]`
 const params = computed(() => ({ slug: route.params.slug }))
 
-const { data: post, status, refresh } = await useSanityQuery(query, params)
+const { data: post, status, error, refresh } = await useSanityQuery(query, params)
 </script>
 ```
 

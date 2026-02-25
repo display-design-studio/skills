@@ -38,7 +38,7 @@ export default defineNuxtConfig({
 
 ## Environment variables
 
-Use `runtimeConfig` to keep secrets out of the client bundle.
+Use Nuxt's `runtimeConfig` to keep secrets out of the client bundle. Nuxt auto-maps env vars to `runtimeConfig` at runtime (not build-time) using the `NUXT_*` / `NUXT_PUBLIC_*` prefix convention — no `process.env.*` needed in the config.
 
 **Public values** (projectId, dataset) — safe to expose to the browser:
 
@@ -46,22 +46,24 @@ Use `runtimeConfig` to keep secrets out of the client bundle.
 // nuxt.config.ts
 runtimeConfig: {
   public: {
-    sanityProjectId: process.env.SANITY_PROJECT_ID,
-    sanityDataset: process.env.SANITY_DATASET || 'production',
+    sanityProjectId: '',   // set via NUXT_PUBLIC_SANITY_PROJECT_ID
+    sanityDataset: 'production',  // override via NUXT_PUBLIC_SANITY_DATASET
   },
-  // private — server only:
+  // private — server only, never exposed to client:
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN,
+    token: '',   // set via NUXT_SANITY_TOKEN
   },
 },
 ```
 
 **Required env vars (.env):**
 ```env
-SANITY_PROJECT_ID=your-project-id
-SANITY_DATASET=production
-SANITY_API_READ_TOKEN=sk...   # server-only, never NUXT_PUBLIC_*
+NUXT_PUBLIC_SANITY_PROJECT_ID=your-project-id
+NUXT_PUBLIC_SANITY_DATASET=production
+NUXT_SANITY_TOKEN=sk...   # server-only — NEVER use NUXT_PUBLIC_SANITY_TOKEN
 ```
+
+Nuxt resolves `NUXT_PUBLIC_*` → `runtimeConfig.public.*` and `NUXT_*` → `runtimeConfig.*` automatically at runtime, making it safe to change the token in deployment without a rebuild.
 
 ---
 
