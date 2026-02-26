@@ -1,0 +1,124 @@
+name: Weekly Skills Sync
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC = 09:00 CET (UTC+1)
+    - cron: "0 8 * * 1"
+  workflow_dispatch: # allow manual triggering for testing
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Capture submodule SHAs before update
+        id: before
+        run: |
+          echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "antigravity=$(git -C vendor/antigravity-awesome-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Update submodules to latest upstream
+        run: git submodule update --remote --init --recursive
+
+      - name: Capture submodule SHAs after update
+        id: after
+        run: |
+          echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "antigravity=$(git -C vendor/antigravity-awesome-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Re-copy vendored skills (antfu/skills)
+        run: |
+          rm -rf skills/nuxt skills/vue skills/vite
+          cp -R vendor/antfu-skills/skills/nuxt skills/nuxt
+          cp -R vendor/antfu-skills/skills/vue skills/vue
+          cp -R vendor/antfu-skills/skills/vite skills/vite
+
+      - name: Re-copy vendored skills (sanity-io/agent-toolkit)
+        run: |
+          rm -rf skills/sanity-best-practices skills/content-modeling-best-practices
+          rm -rf skills/seo-aeo-best-practices skills/content-experimentation-best-practices
+          cp -R vendor/sanity-agent-toolkit/skills/sanity-best-practices skills/sanity-best-practices
+          cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
+          cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
+          cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
+
+      - name: Re-copy vendored skills (sickn33/antigravity-awesome-skills)
+        run: |
+          rm -rf skills/shopify-development
+          cp -R vendor/antigravity-awesome-skills/skills/shopify-development skills/shopify-development
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Validate updated skills
+        run: |
+          for skill_dir in skills/*; do
+            if [ -d "$skill_dir" ]; then
+              echo "Validating $skill_dir"
+              npx -y skills-ref validate "$skill_dir"
+            fi
+          done
+
+      - name: Smoke test skills discovery
+        run: npx -y skills add . --list
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet HEAD; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log no-change result
+        if: steps.changes.outputs.has_changes == 'false'
+        run: echo "All upstream submodules are already up to date. No PR will be created."
+
+      - name: Open pull request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automated/weekly-skills-sync
+          base: main
+          commit-message: "chore: weekly sync of vendored skills"
+          title: "chore: weekly vendored skills sync"
+          body: |
+            ## Weekly Vendored Skills Sync
+
+            This PR was created automatically by the weekly sync workflow.
+
+            ### Upstream changes
+
+            | Vendor | Before | After | Changed |
+            |--------|--------|-------|---------|
+            | `antfu/skills` | `${{ steps.before.outputs.antfu }}` | `${{ steps.after.outputs.antfu }}` | ${{ steps.before.outputs.antfu != steps.after.outputs.antfu && 'yes' || 'no' }} |
+            | `sanity-io/agent-toolkit` | `${{ steps.before.outputs.sanity }}` | `${{ steps.after.outputs.sanity }}` | ${{ steps.before.outputs.sanity != steps.after.outputs.sanity && 'yes' || 'no' }} |
+            | `sickn33/antigravity-awesome-skills` | `${{ steps.before.outputs.antigravity }}` | `${{ steps.after.outputs.antigravity }}` | ${{ steps.before.outputs.antigravity != steps.after.outputs.antigravity && 'yes' || 'no' }} |
+
+            ### Vendored skill directories updated
+
+            - `skills/nuxt`, `skills/vue`, `skills/vite` (from `antfu/skills`)
+            - `skills/sanity-best-practices`, `skills/content-modeling-best-practices`, `skills/seo-aeo-best-practices`, `skills/content-experimentation-best-practices` (from `sanity-io/agent-toolkit`)
+            - `skills/shopify-development` (from `sickn33/antigravity-awesome-skills`)
+
+            ### Validation
+
+            All skills passed `skills-ref validate` and `skills add . --list` before this PR was opened.
+
+            > First-party skills (`gsap`, `nuxt-sanity`, `nuxt-seo`, `ruby-on-rails`, `tailwind`) are not affected by this sync.
