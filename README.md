@@ -24,6 +24,7 @@
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
 - `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
+- `shopify-development`: Shopify apps, extensions, themes, GraphQL API, webhooks, Liquid templating, billing, metafields (API v2026-01).
 - `tailwind`: Tailwind CSS v4 best practices covering utility-first patterns, `@theme` variables, responsive design, dark mode, custom styles, performance, accessibility, and a **Figma → Tailwind theme generation workflow** (paste Figma CSS variables, get `@theme` CSS files organized by category: colors, typography, spacing, radius/shadows, breakpoints).
 
 ### Vendored from `antfu/skills`
@@ -39,10 +40,6 @@
 - `seo-aeo-best-practices`
 - `content-experimentation-best-practices`
 
-### Vendored from `sickn33/antigravity-awesome-skills`
-
-- `shopify-development`: Shopify apps, extensions, themes, GraphQL API, webhooks, Liquid templating, billing, metafields (API v2026-01).
-
 ## Install (skills CLI)
 
 Install one skill from this repository:
@@ -57,12 +54,6 @@ Install a specific first-party or vendored skill:
 npx skills add <owner>/<repo> --skill nuxt-sanity
 npx skills add <owner>/<repo> --skill nuxt
 npx skills add <owner>/<repo> --skill sanity-best-practices
-```
-
-Install a vendored shopify skill:
-
-```bash
-npx skills add <owner>/<repo> --skill shopify-development
 ```
 
 Install all skills from this repository:
@@ -125,6 +116,22 @@ The agent will scan all SKILL.md files under the configured root. The `descripti
 2. Verify the SKILL.md frontmatter has a meaningful `description`. If it doesn't, see the section below.
 
 3. No registration needed — the agent discovers skills from the file system automatically.
+
+### How to update skills
+
+Re-run the same `npx skills add` command to pull the latest version from upstream:
+
+```bash
+npx skills add display-design-studio/skills --skill gsap
+```
+
+To update all skills at once:
+
+```bash
+npx skills add display-design-studio/skills --skill '*'
+```
+
+Existing skill files are overwritten in place. First-party customisations (e.g. edited `description` fields) will be lost — back them up first if needed.
 
 ### Customising `description` for auto-triggering
 

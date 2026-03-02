@@ -5,6 +5,8 @@ description: |
   TRIGGER: "shopify", "shopify app", "checkout extension", "admin extension", "POS extension",
   "shopify theme", "liquid template", "polaris", "shopify graphql", "shopify webhook",
   "shopify billing", "app subscription", "metafields", "shopify functions"
+metadata:
+  author: display studio
 ---
 
 # Shopify Development Skill
