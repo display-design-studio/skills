@@ -1,17 +1,6 @@
 ---
 name: content-experimentation-best-practices
-description: >-
-  A/B testing and content experimentation methodology for data-driven
-  optimization. Use when setting up A/B tests, multivariate tests, or
-  experimentation infrastructure — including experiment design, statistical
-  significance, conversion rate optimization (CRO), feature flags, or
-  integrating experiments with a CMS. Trigger when the user mentions A/B test,
-  split test, variant, experiment, CRO, conversion rate, statistical
-  significance, feature flag, or asks how to test or measure content changes.
-license: MIT
-metadata:
-  author: sanity
-  version: "1.0.0"
+description: Content experimentation and A/B testing guidance covering experiment design, hypotheses, metrics, sample size, statistical foundations, CMS-managed variants, and common analysis pitfalls. Use this skill when planning experiments, setting up variants, choosing success metrics, interpreting statistical results, or building experimentation workflows in a CMS or frontend stack.
 ---
 
 # Content Experimentation Best Practices
@@ -43,8 +32,8 @@ Making decisions based on data rather than opinions (HiPPO avoidance).
 
 ## Resources
 
-See `resources/` for detailed guidance:
-- Experiment design principles
-- Statistical foundations
-- CMS integration patterns
-- Common pitfalls
+Start with the resource that matches the current problem, such as design, statistics, CMS integration, or pitfalls. See `resources/` for detailed guidance:
+- `resources/experiment-design.md` — Hypothesis framework, metrics, sample size, and what to test
+- `resources/statistical-foundations.md` — p-values, confidence intervals, power analysis, Bayesian methods
+- `resources/cms-integration.md` — CMS-managed variants, field-level variants, external platforms
+- `resources/common-pitfalls.md` — 17 common mistakes across statistics, design, execution, and interpretation
