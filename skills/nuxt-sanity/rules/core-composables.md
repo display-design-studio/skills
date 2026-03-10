@@ -92,6 +92,51 @@ onMounted(() => {
 
 ---
 
+## Preview-switch composable pattern
+
+Use this pattern when you need a composable that serves a cached Nitro endpoint in production but
+bypasses the cache and fetches live draft data in preview mode.
+
+**When to use**: any page-level composable in the Display Nuxt Starter that should benefit from
+CDN caching in production and show live draft data with stega overlays in preview.
+
+`useSanityVisualEditingState()` returns the current visual editing state. The `enabled` flag may
+be `undefined` before hydration, so coerce with `Boolean()`:
+
+```ts
+const visualEditingState = useSanityVisualEditingState()
+const isPreview = computed(() => Boolean(visualEditingState?.enabled))
+```
+
+Full pattern:
+
+```ts
+// app/composables/useSanityHome.ts
+import type { HomeQueryResult } from '#build/types/sanity-typegen'
+
+export const useSanityHome = (params: { lang: string }) => {
+  const visualEditingState = useSanityVisualEditingState()
+  const isPreview = computed(() => Boolean(visualEditingState?.enabled))
+
+  if (isPreview.value) {
+    // Preview path: useSanityQuery → live draft data, stega-encoded for overlay clicks
+    return useSanityQuery<HomeQueryResult>(homeQuery, params)
+  }
+
+  // Production path: useFetch → cached Nitro endpoint → CDN-backed response, stega disabled
+  return useFetch<HomeQueryResult>('/api/sanity/home', { query: params })
+}
+```
+
+- **Production path**: `useFetch` hits the cached Nitro endpoint which serves CDN-backed data with
+  stega disabled — safe for public caching
+- **Preview path**: `useSanityQuery` goes directly to Sanity with stega encoding active so the
+  visual editing overlay knows which fields to annotate
+
+→ See `arch-extension-pattern.md` for the full 4-step recipe that uses this pattern.
+
+---
+
 ## Incorrect
 
 ```vue

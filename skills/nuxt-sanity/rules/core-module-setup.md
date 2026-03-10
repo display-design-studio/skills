@@ -65,6 +65,15 @@ NUXT_SANITY_TOKEN=sk...   # server-only — NEVER use NUXT_PUBLIC_SANITY_TOKEN
 
 Nuxt resolves `NUXT_PUBLIC_*` → `runtimeConfig.public.*` and `NUXT_*` → `runtimeConfig.*` automatically at runtime, making it safe to change the token in deployment without a rebuild.
 
+**Additional env vars for the Display Nuxt Starter:**
+```env
+NUXT_SANITY_VISUAL_EDITING_STUDIO_URL=https://your-studio.sanity.studio  # Studio URL for visual editing overlay
+NUXT_PURGE_SECRET=...             # shared secret for manual cache purge endpoint
+NUXT_SANITY_WEBHOOK_SECRET=...    # shared secret for Sanity webhook (required in production)
+```
+
+→ For the full caching setup (cache tags, CDN invalidation, preview bypass) see `perf-cdn-caching.md`.
+
 ---
 
 ## useCdn flag
@@ -125,6 +134,13 @@ sanity: {
 },
 // token in runtimeConfig.sanity.token (private)
 ```
+
+---
+
+## Page-level caching with `routeRules`
+
+The Display Nuxt Starter uses `routeRules` in `nuxt.config.ts` to add CDN caching at the page
+level alongside the Nitro endpoint caching. See `perf-cdn-caching.md` for the full configuration.
 
 ---
 
