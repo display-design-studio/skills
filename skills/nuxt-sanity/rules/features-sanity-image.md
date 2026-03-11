@@ -96,6 +96,22 @@ const ogImageUrl = computed(() =>
 
 ---
 
+## Width and quality conventions
+
+All image URL calls use `auto('format')` (served as WebP/AVIF automatically) and these caps:
+
+| Usage | Width | Quality |
+|-------|-------|---------|
+| Mobile hero images | `800` | `80` |
+| Section / article images | `1500` | `80` |
+| Full-bleed images | `1920` | `80` |
+| Desktop hero images | `1500` | `80` |
+
+Always pass the full image object (e.g. `urlFor(image)`) — not `image.asset` — so hotspot/crop
+metadata is preserved for smart cropping.
+
+---
+
 ## LQIP (Low-Quality Image Placeholder)
 
 ```vue

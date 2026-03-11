@@ -58,7 +58,7 @@ This file provides IF/THEN blocks for the most common failure modes.
 
 ```ts
 // Use useCookie — works identically on server and client
-const isDraft = useCookie('__prerender_bypass')
+const isDraft = useCookie('sanity-preview-id')
 const perspective = computed(() => isDraft.value ? 'previewDrafts' : 'published')
 ```
 
@@ -128,6 +128,20 @@ Never `console.log(useRuntimeConfig().sanity.token)` in components — it will a
 ```groq
 mainImage{ asset, hotspot, crop, alt }
 ```
+
+---
+
+---
+
+## Quick troubleshooting checklist
+
+| Symptom | First check |
+|---------|-------------|
+| Preview not entering | Verify `sanity-preview-id` cookie is set; check `NUXT_SANITY_VISUAL_EDITING_STUDIO_URL` |
+| Stale content outside preview | Check `getKey` format, `maxAge`, and that webhook `/api/cache/revalidate` is firing |
+| Search showing no drafts | Expected — search always uses the cached server route, never the preview path |
+| CDN cache fragmentation | Confirm `Vary: Cookie` is absent on `/api/**` responses (check response headers in Netlify logs) |
+| All pages cold after a publish | Verify `useStorage('cache').clear()` is NOT called in `revalidate.ts` — only `purgeCache({ tags })` should run |
 
 ---
 
