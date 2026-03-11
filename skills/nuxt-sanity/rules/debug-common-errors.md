@@ -131,6 +131,32 @@ mainImage{ asset, hotspot, crop, alt }
 
 ---
 
+## IF: Webhook always returns 401
+
+**Symptom:** `POST /api/cache/revalidate` returns 401 on every Sanity document publish; cache
+is never purged.
+
+**Cause:** `NUXT_SANITY_WEBHOOK_SECRET` is not set in the runtime environment. When the env var
+is absent, `useRuntimeConfig().sanityWebhookSecret` resolves to `''` and never matches the
+incoming `x-sanity-webhook-secret` header — so every request is rejected.
+
+**Fix:**
+1. Declare the key in `nuxt.config.ts` runtimeConfig (empty string placeholder):
+   ```ts
+   runtimeConfig: {
+     sanityWebhookSecret: '', // set via NUXT_SANITY_WEBHOOK_SECRET
+   }
+   ```
+2. Add the secret to `.env` (local):
+   ```
+   NUXT_SANITY_WEBHOOK_SECRET=your-secret-here
+   ```
+3. Add a placeholder to `.env.example` so other developers know it is required:
+   ```
+   NUXT_SANITY_WEBHOOK_SECRET=
+   ```
+4. Set the same value in Netlify environment variables (production)
+
 ---
 
 ## Quick troubleshooting checklist

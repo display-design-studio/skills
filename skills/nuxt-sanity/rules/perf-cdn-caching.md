@@ -12,13 +12,13 @@ A single `Cache-Control` header drives both the browser cache and the CDN. TTLs 
 
 | Route type | `max-age` (browser) | `s-maxage` (CDN) | Rationale |
 |------------|---------------------|-----------------|-----------|
-| Editorial routes (all except search) | 3600 s (1 h) | 86400 s (24 h) | Server-side tag purge covers freshness; a 1-hour browser window is low-risk |
+| Editorial routes (all except search) | 0 (always validate) | 86400 s (24 h) | CDN holds the page; browser always revalidates so users never see a stale copy when the CDN has been purged |
 | Search | 60 s (1 min) | 300 s (5 min) | Search results are dynamic and must be short-lived |
 
 `Cache-Control` header for editorial routes:
 
 ```
-Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
+Cache-Control: public, max-age=0, must-revalidate
 ```
 
 `Cache-Control` header for search:
@@ -33,16 +33,17 @@ Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
 
 | Strategy | Nuxt key | Behaviour | When to use |
 |----------|----------|-----------|-------------|
-| ISR | `isr: <seconds>` | Serves cached HTML; first request after TTL regenerates synchronously | Recommended for most content pages |
-| SWR | `swr: <seconds>` | Serves stale immediately; regenerates in background | When you need zero-latency stale responses |
+| ISR | `isr: true` | Static until explicit webhook purge, no TTL fallback | Recommended — pairs with Netlify DPR and webhook-based invalidation |
+| SWR | `swr: <seconds>` | Serves stale immediately; regenerates in background | Only when no webhook-based invalidation strategy is in place |
 
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
   routeRules: {
-    // Pages: ISR — cached HTML, regenerated after TTL (recommended)
-    '/**': { isr: 86400 },
+    // Pages: ISR — Netlify DPR, static until explicit purge (recommended)
+    '/**': { isr: true },
     // Alternative: SWR — serve stale immediately, regenerate in background
+    // Only use when webhook-based invalidation is not available
     // '/**': { swr: 86400 },
 
     // API endpoints manage their own Cache-Control — disable page-level caching
@@ -51,9 +52,9 @@ export default defineNuxtConfig({
 })
 ```
 
-- Pages use `isr: 86400` (production pattern): Netlify caches pre-rendered HTML at the edge;
-  the first request after the TTL expires triggers synchronous regeneration before responding
-- Use `swr: 86400` instead when zero-latency stale responses matter more than freshness — the
+- Pages use `isr: true` (production pattern): Netlify DPR caches pre-rendered HTML at the edge
+  indefinitely; freshness is driven entirely by webhook purge, not a TTL
+- Use `swr: <seconds>` **only** when no webhook-based invalidation strategy is in place — the
   stale page is served immediately and regeneration happens in the background
 - `/api/**` sets `isr: false` because each `defineCachedEventHandler` manages its own cache
   via the Nitro cache layer (see `perf-query-keys-and-caching.md`)
@@ -97,21 +98,45 @@ when that document changes in Sanity.
 
 ```ts
 // app/composables/useCacheTag.ts
-export const useCacheTag = (id: string) => {
+export const useCacheTag = (tags: string | string[]) => {
   if (import.meta.server) {
     const event = useRequestEvent()
     if (event) {
-      appendHeader(event, 'Netlify-Cache-Tag', id)
+      const value = Array.isArray(tags) ? tags.join(',') : tags
+      setResponseHeader(event, 'Netlify-Cache-Tag', value)
     }
   }
 }
 ```
 
 - Runs server-side only (`import.meta.server`)
-- Sets the `Netlify-Cache-Tag` header with the Sanity document `_id`
-- `useCacheTag` ties the CDN page cache to the specific Sanity document `_id` so the webhook can purge precisely — only the pages that rendered that document go cold
-- Netlify uses this tag to purge exactly those pages when the document is invalidated
-- Called in pages after the null-guard: `if (data.value) { useCacheTag(data.value._id) }`
+- Sets the `Netlify-Cache-Tag` header with one or more Sanity document tags
+- Accepts a single `string` or an `array` of strings — array is joined as comma-separated
+- Uses `setResponseHeader` (overwrites) rather than `appendHeader` (appends) to avoid duplicate tag headers
+- Netlify uses these tags to purge exactly the pages that rendered those documents
+
+**Usage patterns:**
+
+```ts
+// Single-document page (e.g. /posts/[slug])
+if (post.value) {
+  useCacheTag(post.value._id)
+}
+
+// Listing page — tag with both the listing doc id and the content type
+if (listing.value) {
+  useCacheTag([listing.value._id, 'post'])
+}
+
+// Listing page with multiple referenced types
+if (listing.value) {
+  useCacheTag([listing.value._id, 'post', 'category'])
+}
+```
+
+> **IMPORTANT:** `useCacheTag` uses `setResponseHeader` which **overwrites** on each call.
+> Always pass all tags in a **single array call**. Never call `useCacheTag` multiple times on
+> the same page — only the last call's tags will be set.
 
 ---
 
@@ -130,15 +155,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const body = await readBody<{ _id: string }>(event)
-  const { _id } = body
+  const body = await readBody<{ _id: string; _type?: string }>(event)
 
-  // Purge CDN pages tagged with this document's _id (targeted, by document)
-  await purgeCache({ tags: [_id] })
+  // Purge by both _id (individual page) and _type (listing pages for that content type)
+  const tags = [body?._id, body?._type].filter(Boolean)
+  await purgeCache({ tags })
 
-  return { purged: true, _id }
+  return { purged: true, tags }
 })
 ```
+
+> **GROQ projection:** The Sanity webhook must include `_type` in its projection so the handler
+> receives it: `{ _id, _type }`.
+
+> **Warning:** Without `_type` purge, listing pages that reference new documents will never
+> refresh after a publish — they stay stale until a full redeploy.
 
 > **Warning:** Do NOT call `useStorage('cache').clear()` here — it nukes all Nitro cache
 > entries simultaneously, making every page go cold on every Sanity publish.
@@ -215,3 +246,14 @@ runtimeConfig: {
   sanityWebhookSecret: '',   // set via NUXT_SANITY_WEBHOOK_SECRET
 },
 ```
+
+Both secrets must be present in **three places**:
+
+1. `nuxt.config.ts` `runtimeConfig` — declares the key (empty string placeholder)
+2. `.env` — local development value
+3. `.env.example` — placeholder so other developers know the variable is required
+4. Netlify environment variables — production value
+
+> **Warning:** If `NUXT_SANITY_WEBHOOK_SECRET` is missing from the runtime environment,
+> `useRuntimeConfig().sanityWebhookSecret` is `''` and never matches the incoming header —
+> every webhook call returns 401 with no visible error in Studio.
