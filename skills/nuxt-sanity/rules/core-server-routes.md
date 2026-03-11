@@ -100,6 +100,65 @@ Client calls `/api/preview?slug=hello` — token stays on the server.
 
 ---
 
+## Cached Sanity endpoint conventions
+
+Production handlers in `server/api/sanity/<scope>.get.ts` follow this template:
+
+```ts
+// server/api/sanity/<scope>.get.ts
+import { createError, getQuery, setHeader } from 'h3'
+import { <scope>Query } from '~~/shared/utils/<scope>Query'
+
+const browserMaxAge = 3600   // browser-fresh window
+const cdnMaxAge = 86400      // CDN s-maxage
+
+/**
+ * GET /api/sanity/<scope>
+ *
+ * Returns <description> from Sanity CMS.
+ * Served from Nitro in-memory cache; CDN adds s-maxage=86400.
+ *
+ * @query lang - BCP-47 locale code (default: 'en')
+ * @query slug - Document slug (required)
+ * @throws 400 if required params are missing
+ * @cache max-age=3600 (browser), s-maxage=86400 (CDN)
+ */
+export default defineCachedEventHandler(
+  async (event) => {
+    const { lang = 'en', slug } = getQuery<{ lang?: string; slug?: string }>(event)
+
+    if (!slug) throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
+
+    setHeader(
+      event,
+      'Cache-Control',
+      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
+    )
+
+    const sanity = useSanity()
+    return sanity.fetch(<scope>Query, { lang, slug }, { stega: false })
+  },
+  {
+    maxAge: cdnMaxAge,
+    getKey: (event) => {
+      const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
+      return `<scope>:${lang}:${slug}`   // stable format: 'scope:lang:param'
+    },
+  }
+)
+```
+
+Conventions:
+
+- **TTL constants** (`browserMaxAge`, `cdnMaxAge`) declared at module scope — easy to read and
+  override per route. Search routes use shorter values (`60` / `300`).
+- **`stega: false`** as third argument to `sanity.fetch()` — prevents stega encoding from leaking
+  into cached responses served to regular visitors.
+- **`getKey` format** `'scope:lang:param'` — stable, unique, human-readable.
+- **`@query` JSDoc tag** documents GET query parameters inline, mirroring `@throws` and `@cache`.
+
+---
+
 ## Incorrect
 
 ```ts

@@ -57,6 +57,19 @@ with a loading state rather than blocking navigation:
 const { data: posts, status } = useLazySanityQuery(query)
 // no await — navigation is not blocked
 </script>
+```
+
+To reuse data that was already included in the SSR payload (avoiding a second network round-trip
+for below-fold content), pass `getCachedData`:
+
+```ts
+const { data } = useLazySanityQuery(query, params, {
+  key: `<scope>-${params.slug}`,
+  getCachedData: (key) => useNuxtApp().payload.data[key] ?? null,
+})
+```
+
+```vue
 
 <template>
   <div v-if="status === 'pending'">Loading…</div>
@@ -108,30 +121,36 @@ const visualEditingState = useSanityVisualEditingState()
 const isPreview = computed(() => Boolean(visualEditingState?.enabled))
 ```
 
-Full pattern:
+Full pattern (with `async`/`await` and explicit `isPreview` guard):
 
 ```ts
-// app/composables/useSanityHome.ts
-import type { HomeQueryResult } from '#build/types/sanity-typegen'
+// app/composables/useSanity<Name>.ts
+import type { <Name>QueryResult } from '#build/types/sanity-typegen'
 
-export const useSanityHome = (params: { lang: string }) => {
+export const useSanity<Name> = async (params: { lang: string; slug?: string }) => {
   const visualEditingState = useSanityVisualEditingState()
   const isPreview = computed(() => Boolean(visualEditingState?.enabled))
 
   if (isPreview.value) {
-    // Preview path: useSanityQuery → live draft data, stega-encoded for overlay clicks
-    return useSanityQuery<HomeQueryResult>(homeQuery, params)
+    // Preview: live draft data, stega-encoded for Visual Editing overlays
+    // useSanityQuery automatically uses perspective: 'previewDrafts' when Visual Editing is active
+    const { data } = await useSanityQuery<<Name>QueryResult>(<name>Query, params)
+    return data
   }
 
-  // Production path: useFetch → cached Nitro endpoint → CDN-backed response, stega disabled
-  return useFetch<HomeQueryResult>('/api/sanity/home', { query: params })
+  // Production: cached Nitro endpoint → CDN-backed response, stega disabled
+  const { data } = await useFetch<<Name>QueryResult>('/api/sanity/<scope>', {
+    query: params
+  })
+  return data
 }
 ```
 
 - **Production path**: `useFetch` hits the cached Nitro endpoint which serves CDN-backed data with
   stega disabled — safe for public caching
 - **Preview path**: `useSanityQuery` goes directly to Sanity with stega encoding active so the
-  visual editing overlay knows which fields to annotate
+  visual editing overlay knows which fields to annotate. No need to pass `perspective: previewDrafts`
+  explicitly — `@nuxtjs/sanity` switches automatically when Visual Editing is active.
 
 → See `arch-extension-pattern.md` for the full 4-step recipe that uses this pattern.
 

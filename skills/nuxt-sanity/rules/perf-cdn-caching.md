@@ -8,38 +8,55 @@
 
 ## Two-layer caching model
 
-| Layer | Who caches | TTL | Header |
-|-------|-----------|-----|--------|
-| Browser | User's browser | 60 s | `max-age=60` |
-| Netlify CDN | Edge network | 24 h + SWR | `s-maxage=86400, stale-while-revalidate=86400` |
+A single `Cache-Control` header drives both the browser cache and the CDN. TTLs differ by route type:
 
-A single `Cache-Control` header drives both layers:
+| Route type | `max-age` (browser) | `s-maxage` (CDN) | Rationale |
+|------------|---------------------|-----------------|-----------|
+| Editorial routes (all except search) | 3600 s (1 h) | 86400 s (24 h) | Server-side tag purge covers freshness; a 1-hour browser window is low-risk |
+| Search | 60 s (1 min) | 300 s (5 min) | Search results are dynamic and must be short-lived |
+
+`Cache-Control` header for editorial routes:
 
 ```
-Cache-Control: public, max-age=60, s-maxage=86400, stale-while-revalidate=86400
+Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
+```
+
+`Cache-Control` header for search:
+
+```
+Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
 ```
 
 ---
 
 ## `routeRules` in `nuxt.config.ts`
 
+| Strategy | Nuxt key | Behaviour | When to use |
+|----------|----------|-----------|-------------|
+| ISR | `isr: <seconds>` | Serves cached HTML; first request after TTL regenerates synchronously | Recommended for most content pages |
+| SWR | `swr: <seconds>` | Serves stale immediately; regenerates in background | When you need zero-latency stale responses |
+
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
   routeRules: {
-    // Pages: Netlify SWR (24 h) + full Cache-Control header
-    '/': { swr: 86400, headers: { 'Cache-Control': 'public, max-age=60, s-maxage=86400, stale-while-revalidate=86400' } },
-    '/**': { swr: 86400, headers: { 'Cache-Control': 'public, max-age=60, s-maxage=86400, stale-while-revalidate=86400' } },
+    // Pages: ISR — cached HTML, regenerated after TTL (recommended)
+    '/**': { isr: 86400 },
+    // Alternative: SWR — serve stale immediately, regenerate in background
+    // '/**': { swr: 86400 },
 
-    // API endpoints manage their own Cache-Control headers — disable Nitro SWR here
-    '/api/**': { swr: false },
+    // API endpoints manage their own Cache-Control — disable page-level caching
+    '/api/**': { isr: false },
   },
 })
 ```
 
-- Pages use `swr: 86400` to enable Netlify's stale-while-revalidate behaviour at the CDN edge
-- `/api/**` sets `swr: false` because each `defineCachedEventHandler` sets its own `Cache-Control`
-  header (see `arch-extension-pattern.md` Step 2)
+- Pages use `isr: 86400` (production pattern): Netlify caches pre-rendered HTML at the edge;
+  the first request after the TTL expires triggers synchronous regeneration before responding
+- Use `swr: 86400` instead when zero-latency stale responses matter more than freshness — the
+  stale page is served immediately and regeneration happens in the background
+- `/api/**` sets `isr: false` because each `defineCachedEventHandler` manages its own cache
+  via the Nitro cache layer (see `perf-query-keys-and-caching.md`)
 
 ---
 
@@ -50,8 +67,12 @@ File: `server/middleware/sanity-preview-cache.ts`
 ```ts
 // server/middleware/sanity-preview-cache.ts
 export default defineEventHandler((event) => {
-  // Always vary on Cookie so CDN separates anonymous vs preview sessions
-  appendHeader(event, 'Vary', 'Cookie')
+  const path = getRequestPath(event)
+  if (!path.startsWith('/api/') && !path.match(/\.(js|css|woff|ico|png|svg)$/)) {
+    // Vary on Cookie only for page routes — avoids fragmenting the CDN cache for API
+    // responses and static assets served to anonymous visitors
+    appendHeader(event, 'Vary', 'Cookie')
+  }
 
   const cookies = parseCookies(event)
   if (cookies['sanity-preview-id']) {
@@ -63,7 +84,7 @@ export default defineEventHandler((event) => {
 })
 ```
 
-- `Vary: Cookie` ensures the CDN stores separate cache entries for anonymous vs preview users
+- `Vary: Cookie` is set **only on page routes** — not on `/api/*` or static assets — to avoid fragmenting the CDN cache for regular visitors
 - When the `sanity-preview-id` cookie is present, `no-store` prevents any CDN or browser caching
 - `event.context.nitro.noCache = true` disables Nitro ISR/SWR for that request
 
@@ -88,6 +109,7 @@ export const useCacheTag = (id: string) => {
 
 - Runs server-side only (`import.meta.server`)
 - Sets the `Netlify-Cache-Tag` header with the Sanity document `_id`
+- `useCacheTag` ties the CDN page cache to the specific Sanity document `_id` so the webhook can purge precisely — only the pages that rendered that document go cold
 - Netlify uses this tag to purge exactly those pages when the document is invalidated
 - Called in pages after the null-guard: `if (data.value) { useCacheTag(data.value._id) }`
 
@@ -108,21 +130,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const body = await readBody<{ _id: string; _type: string }>(event)
-  const { _id, _type } = body
+  const body = await readBody<{ _id: string }>(event)
+  const { _id } = body
 
-  // Purge CDN pages tagged with this document's _id
+  // Purge CDN pages tagged with this document's _id (targeted, by document)
   await purgeCache({ tags: [_id] })
-
-  // Clear Nitro storage cache for the affected endpoint
-  const storage = useStorage('cache')
-  const keys = await storage.getKeys()
-  const affected = keys.filter((k) => k.includes(_type))
-  await Promise.all(affected.map((k) => storage.removeItem(k)))
 
   return { purged: true, _id }
 })
 ```
+
+> **Warning:** Do NOT call `useStorage('cache').clear()` here — it nukes all Nitro cache
+> entries simultaneously, making every page go cold on every Sanity publish.
 
 ---
 
@@ -164,6 +183,19 @@ export default defineEventHandler(async (event) => {
 
 `purgeCache` is imported from `@netlify/functions` and is Netlify-specific. When deploying to a
 different platform, replace it with that platform's CDN purge API.
+
+---
+
+## Debug headers
+
+Use these response headers to verify cache behaviour:
+
+| Header | Values | Provider |
+|--------|--------|----------|
+| `X-Cache` | `HIT` / `MISS` | Netlify CDN |
+| `Cf-Cache-Status` | `HIT` / `MISS` / `EXPIRED` | Cloudflare (if used) |
+| `Cache-Control` | Full policy string | Any |
+| `Netlify-Cache-Tag` | Tag(s) registered for the response | Netlify |
 
 ---
 

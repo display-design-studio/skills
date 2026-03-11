@@ -59,6 +59,51 @@ const { data, refresh } = await useSanityQuery<Post>(query, params, {
 
 ---
 
+## Server-side cache key normalisation (`buildSanityCacheKey`)
+
+When building server-side cache keys for handlers with composite or variable param sets, object
+key insertion order can vary between callers, causing `JSON.stringify` to produce different strings
+for semantically identical params. Use a deep-sorting helper to prevent these phantom cache misses:
+
+```ts
+// utils/sanity-cache.ts
+function sortKeysDeep(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(sortKeysDeep)
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.keys(obj as object)
+        .sort()
+        .map((k) => [k, sortKeysDeep((obj as Record<string, unknown>)[k])])
+    )
+  }
+  return obj
+}
+
+export function buildSanityCacheKey(scope: string, params: Record<string, unknown>): string {
+  return `${scope}:${JSON.stringify(sortKeysDeep(params))}`
+}
+```
+
+Use `buildSanityCacheKey` in the `getKey` callback of `defineCachedEventHandler` when the param
+shape is variable or comes from multiple call sites.
+
+---
+
+## `stega: false` on server-side fetches
+
+> **Note:** All server-side `sanity.fetch()` calls must pass `{ stega: false }` as the third
+> argument:
+>
+> ```ts
+> return sanity.fetch(query, params, { stega: false })
+> ```
+>
+> Sanity's stega encoding injects invisible metadata into string fields to power Visual Editing
+> overlays. If this leaks into a cached API response it will be served to regular visitors who
+> have no Visual Editing context. See `features-visual-editing.md` for the full stega explanation.
+
+---
+
 ## useSanityQuery vs useLazySanityQuery for performance
 
 | | `useSanityQuery` | `useLazySanityQuery` |

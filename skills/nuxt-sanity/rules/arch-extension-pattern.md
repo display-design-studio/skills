@@ -2,17 +2,21 @@
 
 > This recipe applies to the Display Nuxt Starter architecture. For the directory layout and
 > data-flow overview see `arch-starter-pattern.md`. For caching details see `perf-cdn-caching.md`.
+>
+> **Workflow companion:** For the step-by-step checklist when adding a route in an existing
+> project see `add-route.md` (or equivalent workflow skill).
 
 ---
 
 ## Overview
 
-Every new Sanity document type requires four files wired together in this order:
+Every new Sanity document type requires five steps wired together in this order:
 
 1. `shared/utils/<type>Query.ts` — GROQ query
 2. `server/api/sanity/<type>.get.ts` — cached Nitro endpoint
 3. `app/composables/useSanity<Type>.ts` — preview-switch composable
 4. `app/pages/*.vue` — route page
+5. Architecture documentation — update the route table
 
 ---
 
@@ -47,17 +51,34 @@ Use `defineCachedEventHandler` to cache the Sanity response in Nitro storage and
 // server/api/sanity/home.get.ts
 import type { HomeQueryResult } from '#build/types/sanity-typegen'
 
+const browserMaxAge = 3600   // browser-fresh window (1 h)
+const cdnMaxAge = 86400      // CDN s-maxage (24 h)
+
+/**
+ * GET /api/sanity/home
+ *
+ * Returns home page data from Sanity CMS.
+ * Served from Nitro in-memory cache; CDN adds s-maxage=86400.
+ *
+ * @query lang - BCP-47 locale code (default: 'en')
+ * @throws 400 if required params are missing
+ * @cache max-age=3600 (browser), s-maxage=86400 (CDN)
+ */
 export default defineCachedEventHandler(
   async (event) => {
     const { lang = 'en' } = getQuery<{ lang?: string }>(event)
 
-    setHeader(event, 'Cache-Control', 'public, max-age=60, s-maxage=86400, stale-while-revalidate=86400')
+    setHeader(
+      event,
+      'Cache-Control',
+      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
+    )
 
     const sanity = useSanity()
-    return sanity.fetch<HomeQueryResult>(homeQuery, { lang })
+    return sanity.fetch<HomeQueryResult>(homeQuery, { lang }, { stega: false })
   },
   {
-    maxAge: 60 * 60 * 24, // 24 h Nitro cache
+    maxAge: cdnMaxAge,
     getKey: (event) => {
       const { lang = 'en' } = getQuery<{ lang?: string }>(event)
       return `home:${lang}`
@@ -67,6 +88,9 @@ export default defineCachedEventHandler(
 ```
 
 Cache key pattern: `<type>:<lang>` (or `<type>:<lang>:<slug>` for slug-parameterised types).
+Always pass `{ stega: false }` to `sanity.fetch()` — prevents stega encoding from leaking into
+cached responses. See `core-server-routes.md` (Cached Sanity endpoint conventions) for the full
+template.
 
 ---
 
@@ -97,7 +121,8 @@ export const useSanityHome = (params: { lang: string }) => {
 ## Step 4 — Route page (`app/pages/*.vue`)
 
 Await the composable, null-guard before rendering, and tag the page with the document `_id` for
-surgical CDN cache invalidation.
+surgical CDN cache invalidation. `useCacheTag` ties the CDN page cache to the document `_id` so
+the Sanity webhook can purge only the affected pages without clearing unrelated entries.
 
 ```vue
 <!-- app/pages/index.vue -->
@@ -141,17 +166,24 @@ export const pageQuery = defineQuery(`
 
 ```ts
 // server/api/sanity/page.get.ts
+const browserMaxAge = 3600
+const cdnMaxAge = 86400
+
 export default defineCachedEventHandler(
   async (event) => {
     const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
 
-    setHeader(event, 'Cache-Control', 'public, max-age=60, s-maxage=86400, stale-while-revalidate=86400')
+    setHeader(
+      event,
+      'Cache-Control',
+      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
+    )
 
     const sanity = useSanity()
-    return sanity.fetch<PageQueryResult>(pageQuery, { lang, slug })
+    return sanity.fetch<PageQueryResult>(pageQuery, { lang, slug }, { stega: false })
   },
   {
-    maxAge: 60 * 60 * 24,
+    maxAge: cdnMaxAge,
     getKey: (event) => {
       const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
       return `page:${lang}:${slug}`
@@ -194,3 +226,17 @@ if (data.value) {
   <pre>{{ data }}</pre>
 </template>
 ```
+
+---
+
+## Step 5 — Update architecture documentation
+
+After wiring the route, update the route table in your architecture documentation
+(e.g. a `nuxt-sanity.md` or equivalent) with:
+
+- The new endpoint path (`/api/sanity/<type>`)
+- Query params (`lang`, `slug`, etc.)
+- TTL values (`browserMaxAge` / `cdnMaxAge`)
+- Cache key format (e.g. `<type>:lang:slug`)
+
+This keeps the architecture doc accurate as the API surface grows.
