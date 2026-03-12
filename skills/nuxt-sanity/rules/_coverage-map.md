@@ -43,6 +43,10 @@ Docs: https://sanity.nuxtjs.org/
   → `features-visual-editing.md`
 - Dynamic sitemap sources + defineSitemapEventHandler: https://nuxtseo.com/sitemap/guides/dynamic-urls
   → `features-sitemap.md`
+- useSeoMeta() with Sanity data (title, description, ogImage): https://nuxt.com/docs/api/composables/use-seo-meta
+  → `features-seo-meta.md`
+- Sitemap i18n locale prefixes (prefix_except_default), stega safety in handlers
+  → `features-sitemap-i18n.md`
 
 ## Performance
 

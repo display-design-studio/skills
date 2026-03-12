@@ -27,6 +27,8 @@ Load when working with specific integration features:
 - `features-sanity-content.md` — SanityContent Portable Text renderer, custom block components
 - `features-visual-editing.md` — stega, live preview, Presentation tool, draft mode toggling
 - `features-sitemap.md` — dynamic sitemap sources, defineSitemapEventHandler, stegaClean on slugs
+- `features-seo-meta.md` — useSeoMeta() pattern, GROQ seo fields, ogImage URL, fallback chain
+- `features-sitemap-i18n.md` — i18n prefix_except_default strategy, per-locale loc building, stegaClean
 
 ## 3) Performance (`perf-`)
 
