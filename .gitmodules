@@ -7,3 +7,6 @@
 [submodule "vendor/antigravity-awesome-skills"]
 	path = vendor/antigravity-awesome-skills
 	url = https://github.com/sickn33/antigravity-awesome-skills.git
+[submodule "vendor/gsap-skills"]
+	path = vendor/gsap-skills
+	url = https://github.com/greensock/gsap-skills
