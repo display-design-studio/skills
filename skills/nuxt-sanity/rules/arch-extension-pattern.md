@@ -51,8 +51,8 @@ Use `defineCachedEventHandler` to cache the Sanity response in Nitro storage and
 // server/api/sanity/home.get.ts
 import type { HomeQueryResult } from '#build/types/sanity-typegen'
 
-const browserMaxAge = 3600   // browser-fresh window (1 h)
-const cdnMaxAge = 86400      // CDN s-maxage (24 h)
+const browserMaxAge = 3600   // browser-fresh window (1 hour)
+const cdnMaxAge = 86400      // CDN + SWR (24 hours)
 
 /**
  * GET /api/sanity/home

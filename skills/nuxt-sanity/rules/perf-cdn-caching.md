@@ -8,56 +8,66 @@
 
 ## Two-layer caching model
 
-A single `Cache-Control` header drives both the browser cache and the CDN. TTLs differ by route type:
-
-| Route type | `max-age` (browser) | `s-maxage` (CDN) | Rationale |
-|------------|---------------------|-----------------|-----------|
-| Editorial routes (all except search) | 0 (always validate) | 86400 s (24 h) | CDN holds the page; browser always revalidates so users never see a stale copy when the CDN has been purged |
-| Search | 60 s (1 min) | 300 s (5 min) | Search results are dynamic and must be short-lived |
-
-`Cache-Control` header for editorial routes:
+A single `Cache-Control` header drives both browser cache and CDN. This starter uses:
 
 ```
-Cache-Control: public, max-age=0, must-revalidate
+Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
 ```
 
-`Cache-Control` header for search:
+| Layer | TTL | Purpose |
+|-------|-----|---------|
+| Browser | 3600 s (1 h) | Browser holds fresh copy; validates after 1 hour |
+| CDN | 86400 s (24 h) | CDN holds indefinitely (refreshed via ISR/SWR or webhook purge) |
+| SWR buffer | 86400 s (24 h) | If CDN purged but not regenerated, serve stale for up to 24h |
 
-```
-Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
+**Rationale**: Browser 1-hour window balances freshness vs. origin hits. CDN 24h + SWR means stale content is always available even during regeneration.
+
+For search or other high-churn routes, override with shorter TTLs:
+```ts
+// Example: search results (short-lived, high-change frequency)
+{ loc: '/search', ..., headers: { 'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=300' } }
 ```
 
 ---
 
 ## `routeRules` in `nuxt.config.ts`
 
-| Strategy | Nuxt key | Behaviour | When to use |
-|----------|----------|-----------|-------------|
-| ISR | `isr: true` | Static until explicit webhook purge, no TTL fallback | Recommended — pairs with Netlify DPR and webhook-based invalidation |
-| SWR | `swr: <seconds>` | Serves stale immediately; regenerates in background | Only when no webhook-based invalidation strategy is in place |
+Choose **ISR** (recommended for webhook-driven invalidation) or **SWR** (fallback when webhook unavailable):
+
+**ISR (Incremental Static Regeneration)**
 
 ```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  routeRules: {
-    // Pages: ISR — Netlify DPR, static until explicit purge (recommended)
-    '/**': { isr: true },
-    // Alternative: SWR — serve stale immediately, regenerate in background
-    // Only use when webhook-based invalidation is not available
-    // '/**': { swr: 86400 },
-
-    // API endpoints manage their own Cache-Control — disable page-level caching
-    '/api/**': { isr: false },
-  },
-})
+routeRules: {
+  '/**': { isr: true },      // static until webhook purge
+  '/api/**': { isr: false },  // API routes: manage own cache
+}
 ```
 
-- Pages use `isr: true` (production pattern): Netlify DPR caches pre-rendered HTML at the edge
-  indefinitely; freshness is driven entirely by webhook purge, not a TTL
-- Use `swr: <seconds>` **only** when no webhook-based invalidation strategy is in place — the
-  stale page is served immediately and regeneration happens in the background
-- `/api/**` sets `isr: false` because each `defineCachedEventHandler` manages its own cache
-  via the Nitro cache layer (see `perf-query-keys-and-caching.md`)
+- Static HTML cached at edge indefinitely
+- Freshness driven by webhook purge, not TTL
+- Pairs with `POST /api/cache/revalidate` (Sanity webhook)
+- **Recommended** for this starter
+
+**SWR (Stale-While-Revalidate)**
+
+```ts
+routeRules: {
+  '/**': { swr: 86400 },      // serve stale, regenerate in background
+  '/api/**': { swr: false },
+}
+```
+
+- Serves old HTML immediately when TTL expires
+- Regeneration happens in background (24h TTL)
+- Use **only** when webhook-based invalidation unavailable
+- Less fresh content but always performant
+
+Both strategies pair with the same `Cache-Control` header:
+```ts
+headers: {
+  'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400'
+}
+```
 
 ---
 

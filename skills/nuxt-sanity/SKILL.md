@@ -77,17 +77,20 @@ editing, TypeScript, and Nitro server routes.
 | Debug | CORS, auth tokens, hydration errors, common pitfalls | [rules/debug-common-errors.md](rules/debug-common-errors.md) |
 | Sitemap | Dynamic sitemap sources, defineSitemapEventHandler, stegaClean on slugs | [rules/features-sitemap.md](rules/features-sitemap.md) |
 
-## Rule categories by priority
+## Quick access by priority
 
-| Priority | Category | Impact | Prefix |
-|----------|----------|--------|--------|
-| 1 | Module setup & composables | CRITICAL | `core-` |
-| 2 | Server routes | HIGH | `core-` |
-| 3 | Starter architecture & extension | HIGH | `arch-` |
-| 4 | Visual editing | HIGH | `features-` |
-| 5 | Image & Portable Text | HIGH | `features-` |
-| 6 | Caching & performance | MEDIUM-HIGH | `perf-` |
-| 7 | Debug | MEDIUM | `debug-` |
+| Priority | When you need it | File |
+|----------|---|---|
+| 🔴 FIRST | Setting up or configuring the module | `core-module-setup.md` |
+| 🔴 FIRST | Understanding data flow & architecture | `arch-starter-pattern.md` |
+| 🔴 FIRST | Adding a new content type | `arch-extension-pattern.md` |
+| 🟠 OFTEN | Fetching data with useSanityQuery | `core-composables.md` |
+| 🟠 OFTEN | Cache strategy (ISR vs SWR, purge) | `perf-cdn-caching.md` |
+| 🟡 SOMETIMES | Visual editing & stega | `features-visual-editing.md` |
+| 🟡 SOMETIMES | SEO meta tags | `features-seo-meta.md` |
+| 🟡 SOMETIMES | Dynamic sitemap with i18n | `features-sitemap-i18n.md` |
+| 🔵 TROUBLESHOOT | Caching misses or stale data | `perf-query-keys-and-caching.md` |
+| 🔵 TROUBLESHOOT | CORS, hydration, or other bugs | `debug-common-errors.md` |
 
 ## Coverage and maintenance
 

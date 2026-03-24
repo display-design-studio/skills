@@ -61,12 +61,13 @@ export const homeQuery = defineQuery(`
 
 | Convention | Value |
 |------------|-------|
-| Default locale | `en` |
+| Strategy | `prefix_except_default` |
+| Default locale | `en` (no URL prefix) |
 | Query param name | `lang` |
 | GROQ param name | `$lang` |
 | Locale files | `i18n/locales/<lang>.json` |
 
-Pages pass `lang` as a query param to the Nitro endpoint; the endpoint reads it via `getQuery(event)` and forwards it to the GROQ query as `$lang`.
+Pages pass `lang` as a query param to the Nitro endpoint; the endpoint reads it via `getQuery(event)` and forwards it to the GROQ query as `$lang`. See `features-sitemap-i18n.md` for sitemap handling with `prefix_except_default`.
 
 ---
 
