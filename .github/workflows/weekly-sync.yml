@@ -84,6 +84,7 @@ jobs:
 
       - name: Open pull request
         if: steps.changes.outputs.has_changes == 'true'
+        id: create-pr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -113,3 +114,12 @@ jobs:
             All skills passed `skills-ref validate` and `skills add . --list` before this PR was opened.
 
             > First-party skills (`gsap`, `nuxt-sanity`, `nuxt-seo`, `ruby-on-rails`, `tailwind`) are not affected by this sync.
+
+      - name: Enable auto-merge
+        if: steps.changes.outputs.has_changes == 'true' && steps.create-pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --auto --merge \
+            --repo "${{ github.repository }}" \
+            "${{ steps.create-pr.outputs.pull-request-number }}"
