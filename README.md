@@ -41,6 +41,14 @@
 - `seo-aeo-best-practices`
 - `content-experimentation-best-practices`
 
+### Vendored from `juliusbrussee/caveman`
+
+- `caveman`
+
+### Vendored from `vercel-labs/agent-skills`
+
+- `web-design-guidelines`
+
 ## Install (skills CLI)
 
 Install one skill from this repository:

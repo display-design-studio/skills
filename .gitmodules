@@ -7,3 +7,9 @@
 [submodule "vendor/gsap-skills"]
 	path = vendor/gsap-skills
 	url = https://github.com/greensock/gsap-skills
+[submodule "vendor/caveman-skills"]
+	path = vendor/caveman-skills
+	url = https://github.com/juliusbrussee/caveman.git
+[submodule "vendor/vercel-agent-skills"]
+	path = vendor/vercel-agent-skills
+	url = https://github.com/vercel-labs/agent-skills.git
