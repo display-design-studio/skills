@@ -7,6 +7,8 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/antfu-skills` -> `https://github.com/antfu/skills`
 - `vendor/sanity-agent-toolkit` -> `https://github.com/sanity-io/agent-toolkit`
 - `vendor/gsap-skills` -> `https://github.com/greensock/gsap-skills`
+- `vendor/caveman-skills` -> `https://github.com/juliusbrussee/caveman`
+- `vendor/vercel-agent-skills` -> `https://github.com/vercel-labs/agent-skills`
 
 ## Sync workflow
 
@@ -33,6 +35,12 @@ cp -R vendor/sanity-agent-toolkit/skills/sanity-best-practices skills/sanity-bes
 cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
+
+rm -rf skills/caveman
+cp -R vendor/caveman-skills/skills/caveman skills/caveman
+
+rm -rf skills/web-design-guidelines
+cp -R vendor/vercel-agent-skills/skills/web-design-guidelines skills/web-design-guidelines
 
 rm -rf skills/gsap-core skills/gsap-timeline skills/gsap-scrolltrigger skills/gsap-plugins skills/gsap-react skills/gsap-utils skills/gsap-performance skills/gsap-frameworks
 
@@ -66,6 +74,8 @@ git diff
 ## Notes
 
 - GSAP skills (`skills/gsap-*`) are vendored from `greensock/gsap-skills`; after syncing, re-apply the display studio additions noted above.
+- `skills/caveman` is vendored from `juliusbrussee/caveman`.
+- `skills/web-design-guidelines` is vendored from `vercel-labs/agent-skills`.
 - For first-party skills, use `metadata.author: display studio`.
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
