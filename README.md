@@ -128,17 +128,21 @@ The agent will scan all SKILL.md files under the configured root. The `descripti
 
 ### How to update skills
 
-Re-run the same `npx skills add` command to pull the latest version from upstream:
+Use the `skills` CLI's dedicated `update` command (alias: `upgrade`) to pull the latest version of installed skills:
 
 ```bash
-npx skills add display-design-studio/skills --skill gsap
+# Update all skills in the current project
+npx skills update -p
+
+# Update one or more specific skills
+npx skills update gsap
+npx skills update gsap nuxt-sanity
+
+# Skip the scope prompt (auto-detects project vs. global)
+npx skills update -y
 ```
 
-To update all skills at once:
-
-```bash
-npx skills add display-design-studio/skills --skill '*'
-```
+Use `-g`/`--global` instead of `-p`/`--project` to update global (user-level) skills.
 
 Existing skill files are overwritten in place. First-party customisations (e.g. edited `description` fields) will be lost — back them up first if needed.
 
