@@ -21,17 +21,27 @@ sanity: {
                  // the CDN automatically while preview is active (`disableSmartCdn`, on by default)
   visualEditing: {
     studioUrl: process.env.NUXT_SANITY_VISUAL_EDITING_STUDIO_URL || 'http://localhost:3333',
-    token: undefined, // ← DO NOT set here; use runtimeConfig.sanity.token instead
+    token: process.env.NUXT_SANITY_TOKEN, // required here explicitly — see note below
   },
 },
 runtimeConfig: {
   sanity: {
-    token: process.env.NUXT_SANITY_TOKEN, // private — server only
+    token: process.env.NUXT_SANITY_TOKEN, // still needed separately for server-side/client requests
   },
 },
 ```
 
-The module automatically picks up `runtimeConfig.sanity.token` for draft-mode requests.
+`runtimeConfig.sanity.token` covers server-side/client requests made through `sanity.fetch()`, but
+the visual editing feature does **not** inherit it: `options.visualEditing.token` must be set
+explicitly at config level, or module setup fails. Verified on `@nuxtjs/sanity@2.3.0` — omitting it
+makes `nuxi prepare` (and dev/build) fail with:
+
+```
+WARN Could not enable visual editing: 'token' is required.
+```
+
+Yes, this means the same token value is configured twice (once in `visualEditing.token`, once in
+`runtimeConfig.sanity.token`) — that duplication is required by the module, not a mistake.
 
 **Token scope**: use a token with **Viewer** permissions for preview/draft fetching — never an
 Editor or Admin token on the frontend, even server-side. Reserve a separate, more privileged
