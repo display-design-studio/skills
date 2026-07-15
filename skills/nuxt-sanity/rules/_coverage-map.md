@@ -24,7 +24,8 @@ Docs: https://sanity.nuxtjs.org/
   → `arch-starter-pattern.md`
 - i18n conventions (default `en`, `lang` param, `$lang` in GROQ, locale files)
   → `arch-starter-pattern.md`
-- TypeScript typegen imports from `#build/types/sanity-typegen`
+- TypeScript typegen: this starter uses the Sanity CLI's typegen (`studio/` project) via the
+  `#sanity-types` alias, not the module's native `#build/types/sanity-typegen` output
   → `arch-starter-pattern.md`
 - 4-step recipe: GROQ query → `defineCachedEventHandler` endpoint → preview-switch composable → page
   → `arch-extension-pattern.md`
@@ -35,7 +36,7 @@ Docs: https://sanity.nuxtjs.org/
 
 - SanityImage + @nuxt/image: https://sanity.nuxtjs.org/components/sanity-image
   → `features-sanity-image.md`
-- useSanityImage: https://sanity.nuxtjs.org/composables/use-sanity-image
+- Programmatic image URLs (`@sanity/image-url`, no `useSanityImage` composable exists): https://www.sanity.io/docs/image-url
   → `features-sanity-image.md`
 - SanityContent (Portable Text): https://sanity.nuxtjs.org/components/sanity-content
   → `features-sanity-content.md`

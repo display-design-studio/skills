@@ -15,7 +15,8 @@ expose the `seo` fields including a fully-resolved `ogImage` URL.
 ```vue
 <!-- pages/index.vue — no useSeoMeta() call -->
 <script setup lang="ts">
-const { data } = await useAsyncData('home', () => $fetch('/api/home'))
+const { locale } = useI18n()
+const { data } = await useSanityHome({ lang: locale.value })
 </script>
 
 <template>
@@ -48,9 +49,14 @@ export const homeQuery = defineQuery(`*[_type == "home"][0]{
 
 ### `pages/index.vue` — null-guard then `useSeoMeta()`
 
+Fetch through the same preview-switch composable used elsewhere in this starter
+(`useSanityQuery`/`useFetch('/api/sanity/...')` under the hood — see `core-composables.md`),
+not a bare `useAsyncData` + `$fetch` call:
+
 ```vue
 <script setup lang="ts">
-const { data } = await useAsyncData('home', () => $fetch('/api/home'))
+const { locale } = useI18n()
+const { data } = await useSanityHome({ lang: locale.value })
 
 if (data.value) {
   useSeoMeta({
@@ -75,9 +81,8 @@ if (data.value) {
 ```vue
 <script setup lang="ts">
 const route = useRoute()
-const { data } = await useAsyncData(`page-${route.params.slug}`, () =>
-  $fetch(`/api/pages/${route.params.slug}`)
-)
+const { locale } = useI18n()
+const { data } = await useSanityPage({ lang: locale.value, slug: route.params.slug as string })
 
 if (data.value) {
   useSeoMeta({

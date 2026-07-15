@@ -23,7 +23,7 @@ Load when building with the Display Nuxt Starter or adding a new document type:
 
 Load when working with specific integration features:
 
-- `features-sanity-image.md` — SanityImage component, @nuxt/image integration, useSanityImage
+- `features-sanity-image.md` — SanityImage component, @nuxt/image integration, `@sanity/image-url` builder
 - `features-sanity-content.md` — SanityContent Portable Text renderer, custom block components
 - `features-visual-editing.md` — stega, live preview, Presentation tool, draft mode toggling
 - `features-sitemap.md` — dynamic sitemap sources, defineSitemapEventHandler, stegaClean on slugs

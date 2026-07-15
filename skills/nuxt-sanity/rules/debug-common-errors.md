@@ -131,6 +131,31 @@ mainImage{ asset, hotspot, crop, alt }
 
 ---
 
+## IF: worried about GROQ injection from user input
+
+**Symptom:** none yet — this is a preventive check, not a bug report.
+
+**Cause:** GROQ has no query-string escaping mechanism of its own. If a query is built by
+concatenating unvalidated user input directly into the query string, that string can alter the
+query's meaning (the injection vector) — the same class of bug as SQL injection.
+
+**Fix:** Always pass dynamic values through the `params` object with `$`-prefixed names, never
+via string interpolation into the query text:
+
+```ts
+// ❌ User input interpolated directly into the query
+const query = `*[_type == "post" && slug.current == "${userSlug}"][0]`
+
+// ✅ User input passed as a parameter
+const query = `*[_type == "post" && slug.current == $slug][0]`
+await client.fetch(query, { slug: userSlug })
+```
+
+Every query in this codebase already follows the `$param` pattern — keep it that way for any new
+query, especially ones built from `getQuery(event)`/`readBody(event)` values in server routes.
+
+---
+
 ## IF: Webhook always returns 401
 
 **Symptom:** `POST /api/cache/revalidate` returns 401 on every Sanity document publish; cache
