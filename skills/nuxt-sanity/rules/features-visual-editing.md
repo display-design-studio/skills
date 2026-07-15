@@ -14,23 +14,30 @@ data leaking into the client bundle.
 ```ts
 // nuxt.config.ts
 sanity: {
-  projectId: process.env.SANITY_PROJECT_ID,
+  projectId: process.env.NUXT_PUBLIC_SANITY_PROJECT_ID,
   dataset: 'production',
   apiVersion: '2024-01-01',
-  useCdn: false, // must be false for draft/visual editing
+  useCdn: false, // must be false for draft/visual editing — the module also force-disables
+                 // the CDN automatically while preview is active (`disableSmartCdn`, on by default)
   visualEditing: {
-    studioUrl: process.env.SANITY_STUDIO_URL || 'http://localhost:3333',
+    studioUrl: process.env.NUXT_SANITY_VISUAL_EDITING_STUDIO_URL || 'http://localhost:3333',
     token: undefined, // ← DO NOT set here; use runtimeConfig.sanity.token instead
   },
 },
 runtimeConfig: {
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN, // private — server only
+    token: process.env.NUXT_SANITY_TOKEN, // private — server only
   },
 },
 ```
 
 The module automatically picks up `runtimeConfig.sanity.token` for draft-mode requests.
+
+**Token scope**: use a token with **Viewer** permissions for preview/draft fetching — never an
+Editor or Admin token on the frontend, even server-side. Reserve a separate, more privileged
+token (never used for this preview flow) for any endpoint that actually needs to mutate content.
+Note that Sanity asset files are never private, even on a private dataset, so a leaked Viewer
+token exposes document data but not more than the asset URLs already would.
 
 ---
 
@@ -59,7 +66,10 @@ Do NOT add a custom draft-mode server route — it is redundant and would use a 
 When visual editing is active, Sanity injects invisible stega metadata into string fields.
 Strings will contain embedded source map data that powers click-to-edit overlays.
 
-**Important:** Always call `stegaClean()` before string comparisons or key lookups:
+**Important:** Always call `stegaClean()` before string comparisons or key lookups — this applies
+to any use of a Sanity string value in a conditional, not just slugs: `v-if`/`v-else` branches,
+`:class` bindings, string-length checks, `Array.includes()`, etc. all break silently if the value
+still carries stega metadata.
 
 ```ts
 import { stegaClean } from '@sanity/client/stega'
@@ -153,15 +163,15 @@ runtimeConfig: {
 ## Correct
 
 ```env
-# ✅ Private env var
-SANITY_API_READ_TOKEN=sk...
+# ✅ Private env var — NUXT_ prefix required for Nuxt's runtimeConfig auto-mapping
+NUXT_SANITY_TOKEN=sk...
 ```
 
 ```ts
-// ✅ Token in private runtimeConfig
+// ✅ Token in private runtimeConfig (auto-populated from NUXT_SANITY_TOKEN)
 runtimeConfig: {
   sanity: {
-    token: process.env.SANITY_API_READ_TOKEN,
+    token: '',
   },
 },
 ```

@@ -38,7 +38,9 @@ export const homeQuery = defineQuery(`
 `)
 ```
 
-The file is auto-imported — no import statement needed in server or composable files.
+`defineQuery` itself must still be imported from `'groq'` as shown above. The query file lives in
+`shared/utils/`, so its export (`homeQuery`) is available to both server and composable files
+without a relative import path — but `defineQuery` is not auto-imported.
 
 ---
 
@@ -49,7 +51,7 @@ Use `defineCachedEventHandler` to cache the Sanity response in Nitro storage and
 
 ```ts
 // server/api/sanity/home.get.ts
-import type { HomeQueryResult } from '#build/types/sanity-typegen'
+import type { HomeQueryResult } from '#sanity-types'
 
 const browserMaxAge = 3600   // browser-fresh window (1 hour)
 const cdnMaxAge = 86400      // CDN + SWR (24 hours)
@@ -98,7 +100,7 @@ template.
 
 ```ts
 // app/composables/useSanityHome.ts
-import type { HomeQueryResult } from '#build/types/sanity-typegen'
+import type { HomeQueryResult } from '#sanity-types'
 
 export const useSanityHome = (params: { lang: string }) => {
   const visualEditingState = useSanityVisualEditingState()

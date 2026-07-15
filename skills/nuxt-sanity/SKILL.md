@@ -2,9 +2,10 @@
 name: nuxt-sanity
 description: >-
   @nuxtjs/sanity module integration best practices for Nuxt 3 apps connected
-  to Sanity CMS. Covers useSanityQuery, useLazySanityQuery, useSanity,
-  SanityImage, SanityContent (Portable Text), visual editing / live preview
-  with stega, TypeScript typegen, named clients, and Nitro server routes.
+  to Sanity CMS (there is no separate `@sanity/nuxt` package). Covers
+  useSanityQuery, useLazySanityQuery, useSanity, SanityImage, SanityContent
+  (Portable Text), visual editing / live preview with stega, TypeScript
+  typegen, named clients, and Nitro server routes.
   Also covers starter architecture with cached Nitro endpoints,
   preview-switch composables, Netlify CDN caching, and cache tag invalidation.
   Use when the user mentions @nuxtjs/sanity, nuxt-sanity, useSanityQuery,
@@ -32,7 +33,7 @@ editing, TypeScript, and Nitro server routes.
 **IF writing Nitro server routes that query Sanity:**
 → Read `rules/core-server-routes.md`
 
-**IF working with the SanityImage component or useSanityImage():**
+**IF working with the SanityImage component or building image URLs programmatically:**
 → Read `rules/features-sanity-image.md`
 
 **IF rendering Portable Text with SanityContent:**
@@ -70,7 +71,7 @@ editing, TypeScript, and Nitro server routes.
 | Starter architecture | Directory layout, data-flow, GROQ conventions, i18n | [rules/arch-starter-pattern.md](rules/arch-starter-pattern.md) |
 | Extension pattern | 4-step recipe: GROQ query → endpoint → composable → page | [rules/arch-extension-pattern.md](rules/arch-extension-pattern.md) |
 | CDN caching | Two-layer caching, preview bypass, cache tagging, webhook invalidation | [rules/perf-cdn-caching.md](rules/perf-cdn-caching.md) |
-| SanityImage | SanityImage component, useSanityImage(), @nuxt/image integration | [rules/features-sanity-image.md](rules/features-sanity-image.md) |
+| SanityImage | SanityImage component, `@sanity/image-url` builder, @nuxt/image integration | [rules/features-sanity-image.md](rules/features-sanity-image.md) |
 | SanityContent | Portable Text rendering, custom components | [rules/features-sanity-content.md](rules/features-sanity-content.md) |
 | Visual editing | Stega, live preview, Presentation tool, draft mode | [rules/features-visual-editing.md](rules/features-visual-editing.md) |
 | Caching (queries) | Query key stability, reactive params, cache invalidation | [rules/perf-query-keys-and-caching.md](rules/perf-query-keys-and-caching.md) |

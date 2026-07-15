@@ -27,7 +27,8 @@ const { data: post, status, error, refresh } = await useSanityQuery(query, param
 
 ## Type safety with defineQuery
 
-When using `@sanity/nuxt` typegen, wrap queries with `defineQuery` for automatic type inference:
+When using `@nuxtjs/sanity`'s built-in typegen (`sanity.typegen` in `nuxt.config.ts` — there is
+no separate `@sanity/nuxt` package), wrap queries with `defineQuery` for automatic type inference: 
 
 ```ts
 import { defineQuery } from 'groq'
@@ -125,15 +126,19 @@ Full pattern (with `async`/`await` and explicit `isPreview` guard):
 
 ```ts
 // app/composables/useSanity<Name>.ts
-import type { <Name>QueryResult } from '#build/types/sanity-typegen'
+// This starter uses the Sanity CLI's typegen output via the `#sanity-types` alias —
+// see arch-starter-pattern.md for why this differs from the module's native typegen.
+import type { <Name>QueryResult } from '#sanity-types'
 
 export const useSanity<Name> = async (params: { lang: string; slug?: string }) => {
   const visualEditingState = useSanityVisualEditingState()
   const isPreview = computed(() => Boolean(visualEditingState?.enabled))
 
   if (isPreview.value) {
-    // Preview: live draft data, stega-encoded for Visual Editing overlays
-    // useSanityQuery automatically uses perspective: 'previewDrafts' when Visual Editing is active
+    // Preview: live draft data, stega-encoded for Visual Editing overlays.
+    // Preview-state handling (including which perspective is used) is driven by the module's
+    // own preview composables — see useSanityPerspective()/useSanityPreviewPerspective() below —
+    // rather than a value you need to compute or pass yourself.
     const { data } = await useSanityQuery<<Name>QueryResult>(<name>Query, params)
     return data
   }
@@ -149,10 +154,25 @@ export const useSanity<Name> = async (params: { lang: string; slug?: string }) =
 - **Production path**: `useFetch` hits the cached Nitro endpoint which serves CDN-backed data with
   stega disabled — safe for public caching
 - **Preview path**: `useSanityQuery` goes directly to Sanity with stega encoding active so the
-  visual editing overlay knows which fields to annotate. No need to pass `perspective: previewDrafts`
-  explicitly — `@nuxtjs/sanity` switches automatically when Visual Editing is active.
+  visual editing overlay knows which fields to annotate. `@nuxtjs/sanity` exposes dedicated
+  composables for inspecting/controlling the perspective instead of a single hidden auto-switch —
+  use `useSanityPerspective()` to read the active perspective and `useSanityPreviewPerspective()` /
+  `useIsSanityLivePreview()` when a composable needs to branch on preview state explicitly. Don't
+  assume a bare `useSanityQuery` call always resolves to `previewDrafts` with no configuration —
+  check these composables if a query isn't returning draft content as expected.
 
 → See `arch-extension-pattern.md` for the full 4-step recipe that uses this pattern.
+
+**Visual editing mode**: `sanity.visualEditing.mode` defaults to `'live-visual-editing'`, which
+streams live draft updates to the overlay automatically (no manual refresh wiring needed) — this
+is the mode to use for the standard "Studio editor sees live changes, end user gets server-cached
+content" workflow, and needs no extra composable beyond the preview-switch pattern above. Use
+`'visual-editing'` for overlays without live streaming, or `'custom'` only if you're wiring the
+client plugin yourself via `useSanityVisualEditing()` — in `'custom'` mode (or when you need to
+check/react to live-mode state explicitly, e.g. for debugging), use `useSanityLiveMode()` to
+inspect or drive the live connection. Note `sanity.minimal: true` (the query-only micro client)
+is **incompatible** with `visualEditing` and `liveContent` — the module disables them if
+`minimal` is set.
 
 ---
 

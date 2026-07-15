@@ -77,13 +77,20 @@ Without `@nuxt/image`, `SanityImage` renders a plain `<img>` with Sanity image U
 
 ---
 
-## useSanityImage() — programmatic URL building
+## Programmatic URL building (no `useSanityImage` composable)
 
-For cases where you need an image URL without a component (og:image meta tags, CSS backgrounds):
+There is no `useSanityImage()` composable in `@nuxtjs/sanity` — for cases where you need an
+image URL without rendering `SanityImage` (og:image meta tags, CSS backgrounds), build the URL
+with the official `@sanity/image-url` builder against your Sanity client config:
 
 ```vue
 <script setup lang="ts">
-const { urlFor } = useSanityImage()
+import imageUrlBuilder from '@sanity/image-url'
+
+const { config } = useSanity()
+const builder = imageUrlBuilder(config)
+const urlFor = (source: unknown) => builder.image(source)
+
 const ogImageUrl = computed(() =>
   urlFor(post.value.image).width(1200).height(630).format('jpg').url()
 )
@@ -116,7 +123,6 @@ metadata is preserved for smart cropping.
 
 ```vue
 <script setup lang="ts">
-const { urlFor } = useSanityImage()
 const lqip = computed(() =>
   urlFor(post.value.image).width(20).blur(10).url()
 )
@@ -157,5 +163,5 @@ const lqip = computed(() =>
 ## Docs
 
 - SanityImage component: https://sanity.nuxtjs.org/components/sanity-image
-- useSanityImage: https://sanity.nuxtjs.org/composables/use-sanity-image
+- Image URL builder (`@sanity/image-url`): https://www.sanity.io/docs/image-url
 - Cross-reference: `sanity-best-practices/rules/image-hotspot.md` for GROQ projection patterns

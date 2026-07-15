@@ -22,6 +22,12 @@ Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=8640
 
 **Rationale**: Browser 1-hour window balances freshness vs. origin hits. CDN 24h + SWR means stale content is always available even during regeneration.
 
+**Preview and `useCdn`**: `@nuxtjs/sanity` force-disables Sanity's own CDN (`useCdn`) automatically
+whenever a request is in preview/visual-editing mode, regardless of the `useCdn` value in
+`nuxt.config.ts` — this is the module's `disableSmartCdn` behavior (on by default). You don't need
+to toggle `useCdn` yourself per-request; only set `disableSmartCdn: true` if you deliberately want
+Sanity's CDN to stay active during preview.
+
 For search or other high-churn routes, override with shorter TTLs:
 ```ts
 // Example: search results (short-lived, high-change frequency)
@@ -181,8 +187,21 @@ export default defineEventHandler(async (event) => {
 > **Warning:** Without `_type` purge, listing pages that reference new documents will never
 > refresh after a publish — they stay stale until a full redeploy.
 
-> **Warning:** Do NOT call `useStorage('cache').clear()` here — it nukes all Nitro cache
-> entries simultaneously, making every page go cold on every Sanity publish.
+> **Webhook delivery isn't guaranteed exactly-once.** `@sanity/webhook`'s `isValidSignature`
+> already enforces a timestamp check against the signed payload, which mitigates naive replay —
+> you don't need to add your own timing logic on top of it. But Sanity does not guarantee
+> delivery order or that every event arrives, so treat the webhook purely as a trigger to
+> re-fetch/purge rather than a source of truth, and consider a periodic reconciliation job (e.g.
+> a scheduled full purge or re-validation) as a backstop for missed deliveries — a
+> shared-secret header check alone does not solve for dropped or out-of-order events.
+
+> **Warning:** Do NOT call `useStorage('cache').clear()` here. `unstorage`'s `clear(base?)` wipes
+> the **entire storage mount** when called with no `base` argument — and Nitro's default `cache`
+> mount is shared by every `defineCachedEventHandler` key (`page:*`, `home:*`, etc.) as well as
+> ISR. A single document publish would purge every cached page in every locale, not just the
+> entries tied to that document — a cache stampede, not a targeted invalidation. Only
+> `purgeCache({ tags })` (the Netlify CDN purge above) should run in this handler; if you ever
+> need to clear specific Nitro storage keys, pass an explicit `base` scoped to just those keys.
 
 ---
 
@@ -257,7 +276,7 @@ runtimeConfig: {
 },
 ```
 
-Both secrets must be present in **three places**:
+Both secrets must be present in **four places**:
 
 1. `nuxt.config.ts` `runtimeConfig` — declares the key (empty string placeholder)
 2. `.env` — local development value
