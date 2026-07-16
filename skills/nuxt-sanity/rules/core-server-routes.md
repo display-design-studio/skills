@@ -139,6 +139,7 @@ export default defineCachedEventHandler(
     return sanity.fetch(<scope>Query, { lang, slug }, { stega: false })
   },
   {
+    ...sanityCacheOpts,
     maxAge: cdnMaxAge,
     getKey: (event) => {
       const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
@@ -156,6 +157,10 @@ Conventions:
   into cached responses served to regular visitors.
 - **`getKey` format** `'scope:lang:param'` — stable, unique, human-readable.
 - **`@query` JSDoc tag** documents GET query parameters inline, mirroring `@throws` and `@cache`.
+- **`...sanityCacheOpts`** (from `server/utils/sanityCache.ts`) pins the Nitro cache storage key's
+  `base`/`group`/`name`, so the Sanity webhook handler can reconstruct and purge the exact key on
+  publish. Without it, the Sanity webhook can only purge the CDN edge cache — the endpoint keeps
+  serving stale data from Nitro's own cache until `maxAge` expires. See `perf-cdn-caching.md`.
 
 ---
 
