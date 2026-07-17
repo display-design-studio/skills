@@ -195,6 +195,12 @@ export async function purgeSanityCacheKeys(keys: string[]) {
 }
 ```
 
+`SUPPORTED_LOCALES = ['en']` above is already the **single-locale** case — one active `i18n`
+locale, one entry in the array. For a project with **no `@nuxtjs/i18n` at all**, drop
+`SUPPORTED_LOCALES` and the locale loop entirely — cache keys have no `:<lang>` segment. See
+"Locale variants" in `core-server-routes.md` for the `getKey`/`resolveNitroCacheKeys` shape in
+each case (multi-locale, single-locale, no i18n).
+
 Spread `...sanityCacheOpts` into every `defineCachedEventHandler`'s options (see
 `core-server-routes.md` and `arch-extension-pattern.md` for the updated endpoint template):
 
