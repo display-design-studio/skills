@@ -42,6 +42,12 @@ Load when tracking down errors:
 
 - `debug-tools.md` — byebug, web console, logging, common error patterns
 
+## 7) Extending Rails
+
+Load when building shared or project-specific tooling:
+
+- `extending-rails.md` — engines, custom generators, Rack middleware
+
 ## Suggested reading order
 
 1. `core-mvc-request-lifecycle.md` (orientation)
@@ -52,3 +58,4 @@ Load when tracking down errors:
 6. Feature-specific component rules
 7. `testing-patterns.md`
 8. `perf-caching-and-deployment.md` + `debug-tools.md`
+9. `extending-rails.md` (only when sharing code across apps or adding custom generators/middleware)
