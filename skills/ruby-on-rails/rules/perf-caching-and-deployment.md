@@ -164,6 +164,72 @@ RAILS_ENV=production rails javascript:build
 
 ---
 
+## Deployment with Kamal (Rails 8 default)
+
+`rails new` sets up Kamal by default — it deploys your app as Docker containers to any
+server(s) you control via SSH, no PaaS required.
+
+```bash
+bin/kamal setup     # first-time provision: install Docker, push image, start app + accessories
+bin/kamal deploy    # build image, push to registry, roll out with zero-downtime health checks
+bin/kamal rollback  # revert to the previous image
+bin/kamal app logs -f
+bin/kamal console   # rails console on a remote server
+```
+
+```yaml
+# config/deploy.yml
+service: myapp
+image: myuser/myapp
+
+servers:
+  web:
+    - 192.168.0.1
+
+registry:
+  username: myuser
+  password:
+    - KAMAL_REGISTRY_PASSWORD   # read from .kamal/secrets
+
+env:
+  secret:
+    - RAILS_MASTER_KEY
+
+accessories:
+  db:
+    image: postgres:17
+    host: 192.168.0.1
+    port: "5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: myapp
+      secret:
+        - POSTGRES_PASSWORD
+    volumes:
+      - data:/var/lib/postgresql/data
+```
+
+- Secrets referenced in `deploy.yml` are pulled from `.kamal/secrets` (which itself can read
+  from a password manager or `ENV`) — never commit real secret values.
+- Kamal proxies traffic through `kamal-proxy`, giving zero-downtime deploys and automatic
+  Let's Encrypt TLS when a `proxy.host` domain is configured.
+
+## Thruster (HTTP proxy in front of Puma)
+
+Rails 8 apps generated with Docker support include Thruster by default — a small Rust
+proxy that sits in front of Puma inside the same container:
+
+```dockerfile
+# Dockerfile (generated)
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+EXPOSE 80
+CMD ["./bin/thrust", "./bin/rails", "server"]
+```
+
+Thruster provides, with zero configuration: X-Sendfile-based asset/static file caching,
+HTTP/2 support, and automatic gzip compression — so Puma itself doesn't need a reverse
+proxy like Nginx for these concerns in simple single-server deployments.
+
 ## Deployment checklist
 
 ```bash
@@ -177,3 +243,5 @@ RAILS_ENV=production rails cache:clear         # clear stale cache
 - https://guides.rubyonrails.org/caching_with_rails.html
 - https://guides.rubyonrails.org/tuning_performance_for_deployment.html
 - https://guides.rubyonrails.org/configuring.html
+- https://kamal-deploy.org/
+- https://github.com/basecamp/thruster

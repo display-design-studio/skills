@@ -13,3 +13,6 @@
 [submodule "vendor/vercel-agent-skills"]
 	path = vendor/vercel-agent-skills
 	url = https://github.com/vercel-labs/agent-skills.git
+[submodule "vendor/shopify-ai-toolkit"]
+	path = vendor/shopify-ai-toolkit
+	url = https://github.com/Shopify/Shopify-AI-Toolkit.git

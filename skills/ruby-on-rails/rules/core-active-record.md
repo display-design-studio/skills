@@ -144,6 +144,55 @@ end
 
 Prefer callbacks only for: `before_validation` normalization, `before_destroy` guard checks, `after_commit` for async jobs.
 
+## Multiple Databases & Sharding
+
+```ruby
+# config/database.yml — separate writer/reader roles plus a shard
+production:
+  primary:
+    <<: *default
+    database: myapp_production
+  primary_replica:
+    <<: *default
+    database: myapp_production
+    replica: true
+  shard_one:
+    <<: *default
+    database: myapp_shard_one
+    migrations_paths: db/shard_migrate
+```
+
+```ruby
+class ApplicationRecord < ActiveRecord::Base
+  self.abstract_class = true
+
+  connects_to database: { writing: :primary, reading: :primary_replica }
+end
+
+class ShardRecord < ApplicationRecord
+  self.abstract_class = true
+
+  connects_to shards: {
+    shard_one: { writing: :shard_one, reading: :shard_one }
+  }
+end
+```
+
+```ruby
+# Force reads from the replica for a block
+ActiveRecord::Base.connected_to(role: :reading) do
+  Post.first
+end
+
+# Switch shard for a block (horizontal sharding)
+ActiveRecord::Base.connected_to(shard: :shard_one) do
+  Post.first
+end
+```
+
+- Automatic writer/reader switching is on by default (`config.active_record.database_selector`) — recent writes stick to the primary for a short delay window to avoid replication-lag reads.
+- Run per-database migrations with `rails db:migrate:primary`, `rails db:migrate:shard_one`, etc.
+
 ## Docs
 
 - https://guides.rubyonrails.org/active_record_basics.html

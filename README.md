@@ -23,7 +23,8 @@
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
-- `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record, routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security, testing, performance, and debugging.
+- `ruby`: core Ruby language best practices (independent of any framework) covering syntax and types, collections/Enumerable, blocks/procs/lambdas, OOP and modules, metaprogramming, Bundler/gems, testing (RSpec/Minitest), and style/typing tooling (RuboCop, RBS, Steep, ruby-lsp).
+- `ruby-on-rails`: full-stack Rails 8.1 best practices covering MVC lifecycle, Active Record (incl. multiple databases/sharding), routing, views, forms, background jobs, mailer, WebSockets, Active Storage, security (incl. the Rails 8 authentication generator), testing, performance, Kamal/Thruster deployment, engines/generators, and debugging.
 - `sanity-schema-accelerator`: low-token Sanity schema generator for object blocks, pageBuilder arrays, singleton pages, and repeatable pages using your Display Studio conventions.
 - `shopify-development`: Shopify apps, extensions, themes, GraphQL API, webhooks, Liquid templating, billing, metafields (API v2026-01).
 - `tailwind`: Tailwind CSS v4 best practices covering utility-first patterns, `@theme` variables, responsive design, dark mode, custom styles, performance, accessibility, and a **Figma → Tailwind theme generation workflow** (paste Figma CSS variables, get `@theme` CSS files organized by category: colors, typography, spacing, radius/shadows, breakpoints).
@@ -48,6 +49,30 @@
 ### Vendored from `vercel-labs/agent-skills`
 
 - `web-design-guidelines`
+
+### Vendored from `Shopify/Shopify-AI-Toolkit`
+
+- `shopify-admin`
+- `shopify-app-store-review`
+- `shopify-custom-data`
+- `shopify-customer`
+- `shopify-dev`
+- `shopify-functions`
+- `shopify-hydrogen`
+- `shopify-liquid`
+- `shopify-onboarding-dev`
+- `shopify-onboarding-merchant`
+- `shopify-partner`
+- `shopify-payments-apps`
+- `shopify-polaris-admin-extensions`
+- `shopify-polaris-app-home`
+- `shopify-polaris-checkout-extensions`
+- `shopify-polaris-customer-account-extensions`
+- `shopify-pos-ui`
+- `shopify-shopifyql`
+- `shopify-storefront-graphql`
+- `shopify-use-shopify-cli`
+- `ucp`
 
 ## Install (skills CLI)
 
@@ -76,6 +101,38 @@ List discoverable skills before install:
 ```bash
 npx skills add <owner>/<repo> --list
 ```
+
+### Install all skills from a single vendor
+
+The `--skill` flag only accepts exact skill names (repeatable) or `'*'` for the entire repo — there is no prefix/glob shorthand like `--skill 'shopify-*'`. To install every skill from one vendor, list each of its skill names explicitly:
+
+```bash
+npx skills add display-design-studio/skills \
+  --skill shopify-admin --skill shopify-app-store-review --skill shopify-custom-data \
+  --skill shopify-customer --skill shopify-dev --skill shopify-functions \
+  --skill shopify-hydrogen --skill shopify-liquid --skill shopify-onboarding-dev \
+  --skill shopify-onboarding-merchant --skill shopify-partner --skill shopify-payments-apps \
+  --skill shopify-polaris-admin-extensions --skill shopify-polaris-app-home \
+  --skill shopify-polaris-checkout-extensions --skill shopify-polaris-customer-account-extensions \
+  --skill shopify-pos-ui --skill shopify-shopifyql --skill shopify-storefront-graphql \
+  --skill shopify-use-shopify-cli --skill ucp
+```
+
+Use the vendor lists in [Included skills](#included-skills) above to get the exact names for other vendors:
+
+- `antfu/skills`: `nuxt`, `vue`, `vite`
+- `sanity-io/agent-toolkit`: `sanity-best-practices`, `content-modeling-best-practices`, `seo-aeo-best-practices`, `content-experimentation-best-practices`
+- `juliusbrussee/caveman`: `caveman`
+- `vercel-labs/agent-skills`: `web-design-guidelines`
+- `Shopify/Shopify-AI-Toolkit`: see the command above
+
+Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
+
+```bash
+cp -R vendor/shopify-ai-toolkit/skills/* /path/to/project/mnt/skills/vendor/
+```
+
+See `SYNC.md` for the full per-skill `cp -R` list for each vendor.
 
 ## Attribution and authorship
 
