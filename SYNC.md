@@ -10,6 +10,7 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/vercel-agent-skills` -> `https://github.com/vercel-labs/agent-skills`
 - `vendor/shopify-ai-toolkit` -> `https://github.com/Shopify/Shopify-AI-Toolkit`
 - `vendor/julius-skills` -> `https://github.com/JuliusBrussee/skills`
+- `vendor/ponytail-skills` -> `https://github.com/dietrichgebert/ponytail`
 
 ## Sync workflow
 
@@ -86,6 +87,10 @@ cp -R vendor/julius-skills/skills/caveman skills/caveman
 cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
 cp -R vendor/julius-skills/skills/grill-me skills/grill-me
 cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
+
+rm -rf skills/ponytail
+
+cp -R vendor/ponytail-skills/skills/ponytail skills/ponytail
 ```
 
 > **Note:** After syncing `gsap-*` skills, re-apply the display studio additions:
