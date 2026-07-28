@@ -49,6 +49,30 @@
 
 - `web-design-guidelines`
 
+### Vendored from `Shopify/Shopify-AI-Toolkit`
+
+- `shopify-admin`
+- `shopify-app-store-review`
+- `shopify-custom-data`
+- `shopify-customer`
+- `shopify-dev`
+- `shopify-functions`
+- `shopify-hydrogen`
+- `shopify-liquid`
+- `shopify-onboarding-dev`
+- `shopify-onboarding-merchant`
+- `shopify-partner`
+- `shopify-payments-apps`
+- `shopify-polaris-admin-extensions`
+- `shopify-polaris-app-home`
+- `shopify-polaris-checkout-extensions`
+- `shopify-polaris-customer-account-extensions`
+- `shopify-pos-ui`
+- `shopify-shopifyql`
+- `shopify-storefront-graphql`
+- `shopify-use-shopify-cli`
+- `ucp`
+
 ## Install (skills CLI)
 
 Install one skill from this repository:
