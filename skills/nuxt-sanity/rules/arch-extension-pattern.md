@@ -1,4 +1,4 @@
-# Adding a New Sanity Document Type — 4-Step Recipe
+# Adding a New Sanity Document Type — 6-Step Recipe
 
 > This recipe applies to the Display Nuxt Starter architecture. For the directory layout and
 > data-flow overview see `arch-starter-pattern.md`. For caching details see `perf-cdn-caching.md`.
@@ -10,13 +10,17 @@
 
 ## Overview
 
-Every new Sanity document type requires five steps wired together in this order:
+Every new Sanity document type requires six steps wired together in this order:
 
 1. `shared/utils/<type>Query.ts` — GROQ query
 2. `server/api/sanity/<type>.get.ts` — cached Nitro endpoint
 3. `app/composables/useSanity<Type>.ts` — preview-switch composable
 4. `app/pages/*.vue` — route page
-5. Architecture documentation — update the route table
+5. `server/api/cache/revalidate.ts` — register the type's cache key(s) for webhook invalidation
+6. Architecture documentation — update the route table
+
+Step 5 is the one most likely to be skipped — skipping it doesn't cause an error, it just means
+the new type's cache silently never gets invalidated by the webhook.
 
 ---
 
@@ -80,6 +84,7 @@ export default defineCachedEventHandler(
     return sanity.fetch<HomeQueryResult>(homeQuery, { lang }, { stega: false })
   },
   {
+    ...sanityCacheOpts,
     maxAge: cdnMaxAge,
     getKey: (event) => {
       const { lang = 'en' } = getQuery<{ lang?: string }>(event)
@@ -91,8 +96,9 @@ export default defineCachedEventHandler(
 
 Cache key pattern: `<type>:<lang>` (or `<type>:<lang>:<slug>` for slug-parameterised types).
 Always pass `{ stega: false }` to `sanity.fetch()` — prevents stega encoding from leaking into
-cached responses. See `core-server-routes.md` (Cached Sanity endpoint conventions) for the full
-template.
+cached responses. `...sanityCacheOpts` (from `server/utils/sanityCache.ts`) pins the cache
+storage key so the webhook handler can purge it later — see `core-server-routes.md` (Cached
+Sanity endpoint conventions) for the full template and `perf-cdn-caching.md` for why this matters.
 
 ---
 
@@ -185,6 +191,7 @@ export default defineCachedEventHandler(
     return sanity.fetch<PageQueryResult>(pageQuery, { lang, slug }, { stega: false })
   },
   {
+    ...sanityCacheOpts,
     maxAge: cdnMaxAge,
     getKey: (event) => {
       const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
@@ -231,7 +238,35 @@ if (data.value) {
 
 ---
 
-## Step 5 — Update architecture documentation
+## Step 5 — Register the new type's cache keys in the webhook handler
+
+**This step is easy to skip and breaks cache invalidation silently if you do.** Add the new
+type's cache key(s) to the `resolveNitroCacheKeys` switch in `server/api/cache/revalidate.ts`
+(see `perf-cdn-caching.md`):
+
+```ts
+// server/api/cache/revalidate.ts
+function resolveNitroCacheKeys(body: RevalidateBody): string[] {
+  const { _type, slug } = body
+  switch (_type) {
+    case 'home':
+      return SUPPORTED_LOCALES.map(lang => `home:${lang}`)
+    case 'page':
+      return slug ? SUPPORTED_LOCALES.map(lang => `page:${lang}:${slug}`) : []
+    // + one case per new type, mirroring its getKey format from Step 2
+    default:
+      return []
+  }
+}
+```
+
+If the new type is slug-parameterised, also extend the Sanity webhook's GROQ projection (in the
+Sanity manage dashboard, outside this repo) to include the slug field, e.g.
+`{ _id, _type, "slug": slug.current }`. Without this step, the type's `defineCachedEventHandler`
+endpoint keeps serving stale data for up to `cdnMaxAge` after every publish, even though the
+webhook itself reports success.
+
+## Step 6 — Update architecture documentation
 
 After wiring the route, update the route table in your architecture documentation
 (e.g. a `nuxt-sanity.md` or equivalent) with:
@@ -240,5 +275,6 @@ After wiring the route, update the route table in your architecture documentatio
 - Query params (`lang`, `slug`, etc.)
 - TTL values (`browserMaxAge` / `cdnMaxAge`)
 - Cache key format (e.g. `<type>:lang:slug`)
+- The `resolveNitroCacheKeys` entry added in Step 5
 
 This keeps the architecture doc accurate as the API surface grows.
