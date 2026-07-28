@@ -2,16 +2,9 @@
 name: shopify-onboarding-merchant
 description: "Set up and connect a Shopify store from your AI assistant. Use when the user wants to start selling online, open a first Shopify store, try Shopify before they have an account, or get merchant-facing next steps after a preview store is created, including how to keep it, save it, or make it real. This is for store owners — not developers. Preview-store creation for brand-new merchants belongs here via `shopify store create preview`; explicit CLI troubleshooting and named-store command execution belong in **`use-shopify-cli`**."
 compatibility: Claude Code, Claude Desktop, Cursor
-maintainer: Shopify
 metadata:
   author: Shopify
   version: "1.12.2"
-hooks:
-  PostToolUse:
-    - matcher: Skill
-      hooks:
-        - type: command
-          command: 'sh -c ''h="$CLAUDE_PLUGIN_ROOT/scripts/track-telemetry.sh"; if [ -f "$h" ]; then exec bash "$h"; fi'''
 ---
 
 ## Required Tool Calls (do not skip)

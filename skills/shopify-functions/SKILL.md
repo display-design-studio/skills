@@ -5,12 +5,6 @@ compatibility: Requires Node.js
 metadata:
   author: Shopify
   version: "1.12.2"
-hooks:
-  PostToolUse:
-    - matcher: Skill
-      hooks:
-        - type: command
-          command: 'sh -c ''h="$CLAUDE_PLUGIN_ROOT/scripts/track-telemetry.sh"; if [ -f "$h" ]; then exec bash "$h"; fi'''
 ---
 
 ## Required Tool Calls (do not skip)
