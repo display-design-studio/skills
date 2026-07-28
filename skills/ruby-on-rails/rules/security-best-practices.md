@@ -102,16 +102,50 @@ aws:
 
 ## Authentication
 
-Use a battle-tested gem rather than rolling your own:
+### Rails 8 built-in authentication generator (preferred starting point)
+
+Rails 8.0+ ships a first-party generator that scaffolds a minimal, cookie-session-based
+auth system directly into the app (no extra gem, fully editable code):
+
+```bash
+rails generate authentication
+rails db:migrate
+```
+
+This generates:
+- `User` model with `has_secure_password` (bcrypt) and a normalized/downcased `email_address`
+- `Session` model + `sessions` table (one row per signed-in device/browser)
+- `SessionsController` (`new`/`create`/`destroy` for sign in/out)
+- `PasswordsController` for password-reset flows (token via `generates_token_for`)
+- `Current` (`ActiveSupport::CurrentAttributes`) holding `Current.session` / `Current.user` per request
+- `Authentication` concern included in `ApplicationController`, providing `authenticate_user!`,
+  `require_authentication` as a `before_action`, and `resume_session`
+
+```ruby
+# app/controllers/application_controller.rb
+class ApplicationController < ActionController::Base
+  include Authentication
+  # require_authentication runs as a before_action by default — opt out per controller with:
+  # allow_unauthenticated_access only: %i[index show]
+end
+```
+
+Because the generated code lives in `app/`, treat it like any other app code: add rate
+limiting on sign-in (`rate_limit` on the controller action), lock accounts after repeated
+failures, and extend `Session` with metadata (IP, user agent) as needed.
+
+### Third-party gems (when you need more out of the box)
 
 ```ruby
 # Gemfile
-gem "devise"          # full-featured, most common
-gem "rodauth-rails"   # modern alternative
-gem "authentication-zero"  # Rails 8 generator
+gem "devise"          # full-featured, most common, admin/omniauth/confirmable modules
+gem "rodauth-rails"   # modern alternative, high customizability
 ```
 
-If building custom auth (Rails 8 `has_secure_password`):
+Use a gem instead of the built-in generator when you need multi-role admin panels,
+OmniAuth/SSO providers, or account confirmation/lockable modules out of the box.
+
+### Manual `has_secure_password` (for a single-table, no-sessions-model setup)
 
 ```ruby
 class User < ApplicationRecord
