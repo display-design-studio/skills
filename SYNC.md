@@ -10,6 +10,7 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/caveman-skills` -> `https://github.com/juliusbrussee/caveman`
 - `vendor/vercel-agent-skills` -> `https://github.com/vercel-labs/agent-skills`
 - `vendor/shopify-ai-toolkit` -> `https://github.com/Shopify/Shopify-AI-Toolkit`
+- `vendor/julius-skills` -> `https://github.com/JuliusBrussee/skills`
 
 ## Sync workflow
 
@@ -82,6 +83,12 @@ cp -R vendor/shopify-ai-toolkit/skills/shopify-shopifyql skills/shopify-shopifyq
 cp -R vendor/shopify-ai-toolkit/skills/shopify-storefront-graphql skills/shopify-storefront-graphql
 cp -R vendor/shopify-ai-toolkit/skills/shopify-use-shopify-cli skills/shopify-use-shopify-cli
 cp -R vendor/shopify-ai-toolkit/skills/ucp skills/ucp
+
+rm -rf skills/fuck-slop skills/grill-me skills/junior-to-senior
+
+cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
+cp -R vendor/julius-skills/skills/grill-me skills/grill-me
+cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
 ```
 
 > **Note:** After syncing `gsap-*` skills, re-apply the display studio additions:
@@ -110,3 +117,4 @@ git diff
 - For first-party skills, use `metadata.author: display studio`.
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
+- `skills/fuck-slop`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
