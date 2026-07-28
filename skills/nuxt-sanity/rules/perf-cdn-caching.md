@@ -158,12 +158,89 @@ if (listing.value) {
 
 ## `POST /api/cache/revalidate` — Sanity webhook invalidation
 
-Triggered by a Sanity webhook on document publish. Validates the webhook secret, then purges the
-CDN by document `_id` tag and clears the Nitro storage entry for that document.
+Triggered by a Sanity webhook on document publish. Validates the webhook secret, then purges
+**two independent caches**: the Netlify CDN (by document `_id`/`_type` tag) and Nitro's own
+`defineCachedEventHandler` storage backing the `/api/sanity/*` endpoints. These are separate
+layers — purging only the CDN tag leaves the Nitro-level cache serving stale data for up to
+`cdnMaxAge` (typically 24h), even though the webhook returns success. This is the single most
+common cause of "the webhook fired (200/202) but the content is still stale" reports.
+
+### Nitro cache keys need to be reconstructable
+
+`defineCachedEventHandler` composes its storage key internally as
+`[base, group, name, escapeKey(customKey) + '.json'].join(':')`, where `escapeKey` strips all
+non-word characters. By default no route passes `base`/`group`/`name`, so Nitro falls back to
+internal defaults — a private implementation detail, not a stable public API. **Pin these three
+values explicitly** via a shared options object so the revalidate handler can reconstruct the
+exact same storage key and remove it:
+
+```ts
+// server/utils/sanityCache.ts
+const CACHE_BASE = '/cache'
+const CACHE_GROUP = 'sanity'
+const CACHE_NAME = 'sanity'
+
+export const sanityCacheOpts = { base: CACHE_BASE, group: CACHE_GROUP, name: CACHE_NAME }
+
+/** Mirror `i18n.locales` in `nuxt.config.ts`. */
+export const SUPPORTED_LOCALES = ['en'] as const
+
+function toStorageKey(key: string) {
+  return [CACHE_BASE, CACHE_GROUP, CACHE_NAME, `${key.replace(/\W/g, '')}.json`].join(':')
+}
+
+export async function purgeSanityCacheKeys(keys: string[]) {
+  const storage = useStorage()
+  await Promise.all(keys.map(key => storage.removeItem(toStorageKey(key))))
+}
+```
+
+`SUPPORTED_LOCALES = ['en']` above is already the **single-locale** case — one active `i18n`
+locale, one entry in the array. For a project with **no `@nuxtjs/i18n` at all**, drop
+`SUPPORTED_LOCALES` and the locale loop entirely — cache keys have no `:<lang>` segment. See
+"Locale variants" in `core-server-routes.md` for the `getKey`/`resolveNitroCacheKeys` shape in
+each case (multi-locale, single-locale, no i18n).
+
+Spread `...sanityCacheOpts` into every `defineCachedEventHandler`'s options (see
+`core-server-routes.md` and `arch-extension-pattern.md` for the updated endpoint template):
+
+```ts
+export default defineCachedEventHandler(handler, {
+  ...sanityCacheOpts,
+  maxAge: cdnMaxAge,
+  getKey: event => `home:${lang}`,
+})
+```
+
+### The webhook handler
 
 ```ts
 // server/api/cache/revalidate.post.ts
 import { purgeCache } from '@netlify/functions'
+
+interface RevalidateBody {
+  _id?: string
+  _type?: string
+  slug?: string
+}
+
+/**
+ * Maps a webhook payload to the raw Nitro cache keys backing the
+ * `/api/sanity/*` endpoint for that document type. When a new document type
+ * is added, its cache key(s) MUST be added here too — otherwise that type
+ * silently inherits the stale-cache bug this handler exists to prevent.
+ */
+function resolveNitroCacheKeys(body: RevalidateBody): string[] {
+  const { _type, slug } = body
+  switch (_type) {
+    case 'home':
+      return SUPPORTED_LOCALES.map(lang => `home:${lang}`)
+    case 'page':
+      return slug ? SUPPORTED_LOCALES.map(lang => `page:${lang}:${slug}`) : []
+    default:
+      return []
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const secret = getHeader(event, 'x-sanity-webhook-secret')
@@ -171,18 +248,23 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const body = await readBody<{ _id: string; _type?: string }>(event)
+  const body = await readBody<RevalidateBody>(event)
 
   // Purge by both _id (individual page) and _type (listing pages for that content type)
-  const tags = [body?._id, body?._type].filter(Boolean)
-  await purgeCache({ tags })
+  const tags = [body?._id, body?._type].filter((tag): tag is string => Boolean(tag))
+
+  await Promise.all([
+    purgeCache({ tags }),
+    purgeSanityCacheKeys(resolveNitroCacheKeys(body)),
+  ])
 
   return { purged: true, tags }
 })
 ```
 
-> **GROQ projection:** The Sanity webhook must include `_type` in its projection so the handler
-> receives it: `{ _id, _type }`.
+> **GROQ projection:** The Sanity webhook must include `_type` (and `slug`, for slug-parameterised
+> types) in its projection so the handler receives them: `{ _id, _type, "slug": slug.current }`.
+> Fields that don't apply to a given document type simply come through as `null` — harmless.
 
 > **Warning:** Without `_type` purge, listing pages that reference new documents will never
 > refresh after a publish — they stay stale until a full redeploy.
@@ -199,9 +281,9 @@ export default defineEventHandler(async (event) => {
 > the **entire storage mount** when called with no `base` argument — and Nitro's default `cache`
 > mount is shared by every `defineCachedEventHandler` key (`page:*`, `home:*`, etc.) as well as
 > ISR. A single document publish would purge every cached page in every locale, not just the
-> entries tied to that document — a cache stampede, not a targeted invalidation. Only
-> `purgeCache({ tags })` (the Netlify CDN purge above) should run in this handler; if you ever
-> need to clear specific Nitro storage keys, pass an explicit `base` scoped to just those keys.
+> entries tied to that document — a cache stampede, not a targeted invalidation. Use
+> `purgeSanityCacheKeys` (above) for targeted invalidation instead — it removes only the specific
+> keys resolved from the webhook payload.
 
 ---
 
