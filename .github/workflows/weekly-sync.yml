@@ -27,6 +27,7 @@ jobs:
         run: |
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Update submodules to latest upstream
         run: git submodule update --remote --init --recursive
@@ -36,6 +37,7 @@ jobs:
         run: |
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Re-copy vendored skills (antfu/skills)
         run: |
@@ -52,6 +54,13 @@ jobs:
           cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
           cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
           cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
+
+      - name: Re-copy vendored skills (JuliusBrussee/skills)
+        run: |
+          rm -rf skills/fuck-slop skills/grill-me skills/junior-to-senior
+          cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
+          cp -R vendor/julius-skills/skills/grill-me skills/grill-me
+          cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -104,11 +113,13 @@ jobs:
             |--------|--------|-------|---------|
             | `antfu/skills` | `${{ steps.before.outputs.antfu }}` | `${{ steps.after.outputs.antfu }}` | ${{ steps.before.outputs.antfu != steps.after.outputs.antfu && 'yes' || 'no' }} |
             | `sanity-io/agent-toolkit` | `${{ steps.before.outputs.sanity }}` | `${{ steps.after.outputs.sanity }}` | ${{ steps.before.outputs.sanity != steps.after.outputs.sanity && 'yes' || 'no' }} |
+            | `JuliusBrussee/skills` | `${{ steps.before.outputs.julius }}` | `${{ steps.after.outputs.julius }}` | ${{ steps.before.outputs.julius != steps.after.outputs.julius && 'yes' || 'no' }} |
 
             ### Vendored skill directories updated
 
             - `skills/nuxt`, `skills/vue`, `skills/vite` (from `antfu/skills`)
             - `skills/sanity-best-practices`, `skills/content-modeling-best-practices`, `skills/seo-aeo-best-practices`, `skills/content-experimentation-best-practices` (from `sanity-io/agent-toolkit`)
+            - `skills/fuck-slop`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
 
             ### Validation
 

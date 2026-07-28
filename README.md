@@ -74,6 +74,12 @@
 - `shopify-use-shopify-cli`
 - `ucp`
 
+### Vendored from `JuliusBrussee/skills`
+
+- `fuck-slop`
+- `grill-me`
+- `junior-to-senior`
+
 ## Install (skills CLI)
 
 Install one skill from this repository:
@@ -125,6 +131,7 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `juliusbrussee/caveman`: `caveman`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: see the command above
+- `JuliusBrussee/skills`: `fuck-slop`, `grill-me`, `junior-to-senior`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 

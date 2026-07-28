@@ -16,3 +16,6 @@
 [submodule "vendor/shopify-ai-toolkit"]
 	path = vendor/shopify-ai-toolkit
 	url = https://github.com/Shopify/Shopify-AI-Toolkit.git
+[submodule "vendor/julius-skills"]
+	path = vendor/julius-skills
+	url = https://github.com/JuliusBrussee/skills.git
