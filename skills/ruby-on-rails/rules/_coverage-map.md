@@ -1,6 +1,6 @@
 # Ruby on Rails Coverage Map
 
-Canonical source: https://guides.rubyonrails.org/ (Rails 8.1.2)
+Canonical source: https://guides.rubyonrails.org/ (Rails 8.1.3), https://rubyonrails.org/docs
 
 This map links guide sections to this skill's rule files.
 
@@ -24,7 +24,7 @@ This map links guide sections to this skill's rule files.
 - Active Record Associations: https://guides.rubyonrails.org/association_basics.html -> `core-active-record.md`
 - Active Record Query Interface: https://guides.rubyonrails.org/active_record_querying.html -> `core-active-record.md`
 - Active Record Encryption: https://guides.rubyonrails.org/active_record_encryption.html -> `security-best-practices.md`
-- Multiple Databases: https://guides.rubyonrails.org/active_record_multiple_databases.html -> `core-active-record.md`
+- Multiple Databases (incl. sharding): https://guides.rubyonrails.org/active_record_multiple_databases.html -> `core-active-record.md`
 
 ## Components
 
@@ -46,14 +46,23 @@ This map links guide sections to this skill's rule files.
 - Caching with Rails: https://guides.rubyonrails.org/caching_with_rails.html -> `perf-caching-and-deployment.md`
 - Tuning Performance for Deployment: https://guides.rubyonrails.org/tuning_performance_for_deployment.html -> `perf-caching-and-deployment.md`
 - Configuring Rails Applications: https://guides.rubyonrails.org/configuring.html -> `perf-caching-and-deployment.md`
+- Kamal deployment: https://kamal-deploy.org/ -> `perf-caching-and-deployment.md`
+- Thruster: https://github.com/basecamp/thruster -> `perf-caching-and-deployment.md`
 
 ## Debug
 
 - Debugging Rails Applications: https://guides.rubyonrails.org/debugging_rails_applications.html -> `debug-tools.md`
 - Error Reporting: https://guides.rubyonrails.org/error_reporting.html -> `debug-tools.md`
 
+## Extending Rails
+
+- Getting Started with Engines: https://guides.rubyonrails.org/engines.html -> `extending-rails.md`
+- Creating and Customizing Rails Generators: https://guides.rubyonrails.org/generators.html -> `extending-rails.md`
+- Rails on Rack: https://guides.rubyonrails.org/rails_on_rack.html -> `extending-rails.md`
+
 ## Notes
 
 - Rails releases quarterly; check https://guides.rubyonrails.org/ for version-specific changes.
 - Keep rule files in sync with each minor Rails release (8.x).
 - API reference: https://api.rubyonrails.org/
+- For plain Ruby language topics (not Rails-specific), see the sibling `ruby` skill.

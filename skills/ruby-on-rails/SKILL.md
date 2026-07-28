@@ -2,16 +2,21 @@
 name: ruby-on-rails
 description: >-
   Comprehensive Ruby on Rails 8.1 best-practices skill covering MVC, Active
-  Record, routing, views, background jobs, storage, security, testing, and
-  performance. Use when the user mentions Rails, Ruby on Rails, ActiveRecord,
-  ActiveJob, ActionMailer, ActionCable, Active Storage, rails generate, rails
-  routes, Hotwire, Turbo, Stimulus, or asks to build, review, debug, or
-  migrate a Rails application or API.
+  Record, routing, views, background jobs, storage, security, testing,
+  performance, Kamal/Thruster deployment, and engines/generators. Use when
+  the user mentions Rails, Ruby on Rails, ActiveRecord, ActiveJob,
+  ActionMailer, ActionCable, Active Storage, rails generate, rails routes,
+  Hotwire, Turbo, Stimulus, Kamal, or asks to build, review, debug, or
+  migrate a Rails application or API. For plain Ruby language questions
+  (blocks, modules, metaprogramming, gems, RSpec/Minitest) not specific to
+  the framework, see the sibling `ruby` skill instead.
 ---
 
 # Ruby on Rails Best Practices
 
-Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns, Active Record, components (jobs, mailer, cable, storage), security, testing, performance, and debugging.
+Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns, Active Record, components (jobs, mailer, cable, storage), security, testing, performance, deployment, and debugging.
+
+For core Ruby language topics (blocks/procs/lambdas, modules/mixins, metaprogramming, Bundler/gems, RSpec/Minitest, RuboCop) that aren't Rails-specific, load the sibling `ruby` skill instead.
 
 ## ROUTING: Which rule file to load
 
@@ -42,6 +47,9 @@ Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns,
 **IF debugging an error or unexpected behavior:**
 → Read `rules/debug-tools.md`
 
+**IF building a Rails engine, a custom generator, or Rack middleware:**
+→ Read `rules/extending-rails.md`
+
 **IF new to the MVC request cycle or need a top-level orientation:**
 → Read `rules/core-mvc-request-lifecycle.md` first
 
@@ -58,8 +66,9 @@ Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns,
 | Active Storage | File uploads, cloud storage | [rules/component-active-storage.md](rules/component-active-storage.md) |
 | Security | CSRF, XSS, SQL injection, secrets, auth | [rules/security-best-practices.md](rules/security-best-practices.md) |
 | Testing | Unit, integration, system tests | [rules/testing-patterns.md](rules/testing-patterns.md) |
-| Performance & Deploy | Caching strategies, Puma, concurrency | [rules/perf-caching-and-deployment.md](rules/perf-caching-and-deployment.md) |
+| Performance & Deploy | Caching strategies, Puma, Kamal, Thruster, concurrency | [rules/perf-caching-and-deployment.md](rules/perf-caching-and-deployment.md) |
 | Debug | byebug, web console, logging, common errors | [rules/debug-tools.md](rules/debug-tools.md) |
+| Extending Rails | Engines, custom generators, Rack middleware | [rules/extending-rails.md](rules/extending-rails.md) |
 
 ## Rule categories by priority
 
@@ -71,11 +80,12 @@ Full-stack Rails 8.1 guide organized as modular rules. Covers MVC core patterns,
 | 4 | Testing | HIGH | `testing-` |
 | 5 | Performance & Deploy | MEDIUM-HIGH | `perf-` |
 | 6 | Debug | MEDIUM | `debug-` |
+| 7 | Extending Rails | LOW-MEDIUM | (none, see `extending-rails.md`) |
 
 ## Coverage and maintenance
 
 - Coverage map: `rules/_coverage-map.md`
-- Source: https://guides.rubyonrails.org/ (Rails 8.1.2)
+- Source: https://guides.rubyonrails.org/ (Rails 8.1.3) and https://rubyonrails.org/docs
 - Update this skill when Rails version changes or when new guides are published.
 
 ## Rails CLI quick reference
