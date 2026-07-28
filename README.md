@@ -77,6 +77,10 @@
 - `grill-me`
 - `junior-to-senior`
 
+### Vendored from `dietrichgebert/ponytail`
+
+- `ponytail`
+
 ## Install (skills CLI)
 
 Install one skill from this repository:
