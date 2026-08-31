@@ -1,370 +1,300 @@
-# CDN Caching, Preview Bypass, Cache Tagging, and Invalidation
+# CDN Caching, Preview Isolation, and Invalidation
 
-> This file covers the two-layer HTTP/CDN caching model used in the Display Nuxt Starter. For
-> query-level Nitro cache reactivity see `perf-query-keys-and-caching.md`. For the full
-> architecture overview see `arch-starter-pattern.md`.
+This rule documents the Display Starter's Netlify deployment. Other providers need equivalent cache
+headers, variation, tagging, and purge APIs.
 
----
+## Governing rule
 
-## Two-layer caching model
+Every long-lived cache containing Sanity data must have a reliable invalidation path. A cache that is
+both long-lived and unreachable by the webhook can silently repopulate a freshly purged downstream
+cache with old data.
 
-A single `Cache-Control` header drives both browser cache and CDN. This starter uses:
+| Layer | Policy | Invalidation owner |
+|---|---|---|
+| Browser | `max-age=0, must-revalidate` | HTTP revalidation; not webhook-purgeable |
+| Netlify page HTML | finite ISR, tagged | `purgeCache({ tags })` |
+| Netlify `/api/sanity/*` JSON | durable 24h + 1h SWR, tagged | `purgeCache({ tags })` |
+| Sanity API CDN | Sanity-managed published cache | Sanity invalidation, eventually consistent |
+| Preview | `no-store` | No cache exists |
 
-```
-Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400
-```
+Do not add a default Nitro storage cache between Netlify and Sanity.
 
-| Layer | TTL | Purpose |
-|-------|-----|---------|
-| Browser | 3600 s (1 h) | Browser holds fresh copy; validates after 1 hour |
-| CDN | 86400 s (24 h) | CDN holds indefinitely (refreshed via ISR/SWR or webhook purge) |
-| SWR buffer | 86400 s (24 h) | If CDN purged but not regenerated, serve stale for up to 24h |
+## Cache helpers
 
-**Rationale**: Browser 1-hour window balances freshness vs. origin hits. CDN 24h + SWR means stale content is always available even during regeneration.
+Keep browser and Netlify policy in separate headers. `Cache-Control` is visible to browsers and other
+intermediaries; `Netlify-CDN-Cache-Control` applies only to Netlify.
 
-**Preview and `useCdn`**: `@nuxtjs/sanity` force-disables Sanity's own CDN (`useCdn`) automatically
-whenever a request is in preview/visual-editing mode, regardless of the `useCdn` value in
-`nuxt.config.ts` — this is the module's `disableSmartCdn` behavior (on by default). You don't need
-to toggle `useCdn` yourself per-request; only set `disableSmartCdn: true` if you deliberately want
-Sanity's CDN to stay active during preview.
-
-For search or other high-churn routes, override with shorter TTLs:
 ```ts
-// Example: search results (short-lived, high-change frequency)
-{ loc: '/search', ..., headers: { 'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=300' } }
+// server/utils/cdnCache.ts
+import type { H3Event } from 'h3'
+import { setResponseHeader } from 'h3'
+
+const netlifyMaxAge = 86400
+const netlifyStaleWhileRevalidate = 3600
+
+export function setPublicCdnCache(event: H3Event, tags: string[]) {
+  const uniqueTags = [...new Set(tags.filter(Boolean))]
+
+  setResponseHeader(event, 'Cache-Control', 'public, max-age=0, must-revalidate')
+  setResponseHeader(
+    event,
+    'Netlify-CDN-Cache-Control',
+    `public, durable, max-age=${netlifyMaxAge}, stale-while-revalidate=${netlifyStaleWhileRevalidate}`,
+  )
+
+  if (uniqueTags.length > 0)
+    setResponseHeader(event, 'Netlify-Cache-Tag', uniqueTags.join(','))
+}
+
+export function setNoStore(event: H3Event) {
+  setResponseHeader(event, 'Cache-Control', 'no-store')
+  setResponseHeader(event, 'Netlify-CDN-Cache-Control', 'no-store')
+}
 ```
 
----
+Set no-store at the start of a handler, then replace it with public headers only after a valid result.
+This prevents validation errors, upstream failures, and missing documents from becoming negative
+cache entries.
 
-## `routeRules` in `nuxt.config.ts`
-
-Choose **ISR** (recommended for webhook-driven invalidation) or **SWR** (fallback when webhook unavailable):
-
-**ISR (Incremental Static Regeneration)**
+## Page route rules
 
 ```ts
 routeRules: {
-  '/**': { isr: true },      // static until webhook purge
-  '/api/**': { isr: false },  // API routes: manage own cache
-}
+  '/**': {
+    isr: 86400,
+    headers: {
+      'cache-control': 'public, max-age=0, must-revalidate',
+    },
+  },
+  '/api/**': { isr: false },
+  '/api/cache/**': {
+    isr: false,
+    robots: false,
+    headers: { 'cache-control': 'no-store' },
+  },
+  '/preview/**': {
+    isr: false,
+    robots: false,
+    headers: { 'cache-control': 'no-store' },
+  },
+  '/_sanity/**': {
+    isr: false,
+    robots: false,
+    headers: { 'cache-control': 'no-store' },
+  },
+},
 ```
 
-- Static HTML cached at edge indefinitely
-- Freshness driven by webhook purge, not TTL
-- Pairs with `POST /api/cache/revalidate` (Sanity webhook)
-- **Recommended** for this starter
+Use a finite ISR duration as a recovery bound for missed webhooks. The published Sanity endpoints opt
+out of ISR and set their own dedicated Netlify headers. Never cache the webhook or preview proxy.
 
-**SWR (Stale-While-Revalidate)**
+## Cache variation
 
-```ts
-routeRules: {
-  '/**': { swr: 86400 },      // serve stale, regenerate in background
-  '/api/**': { swr: false },
-}
+Pages must emit this on both public and preview responses:
+
+```http
+Netlify-Vary: cookie=sanity-preview-id
 ```
 
-- Serves old HTML immediately when TTL expires
-- Regeneration happens in background (24h TTL)
-- Use **only** when webhook-based invalidation unavailable
-- Less fresh content but always performant
+Validate the cookie against the private `previewModeId` before setting no-store. Do not use broad
+`Vary: Cookie`, which creates high-cardinality cache objects. Do not vary `/api/sanity/*` by cookies.
 
-Both strategies pair with the same `Cache-Control` header:
+Endpoint cache keys must distinguish all query parameters that affect the result. Verify the deployed
+response uses `Netlify-Vary: query` or an explicit parameter list such as
+`Netlify-Vary: query=lang|slug`. A cache-busting query parameter is meaningful only when the deployed
+variation policy includes it.
+
+## Tag every dependent cache object
+
+The page HTML and its backing JSON are separate cache objects. Apply the same dependency tags to both
+in one call because setting the header twice overwrites the earlier value.
+
 ```ts
-headers: {
-  'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400'
-}
+const tags = [
+  page._id,
+  page._type,
+  page.author?._id,
+  page.author?._type,
+].filter((tag): tag is string => Boolean(tag))
+
+setPublicCdnCache(event, tags) // endpoint
+useCacheTag(tags)              // page
 ```
 
----
+Prefer precise IDs for rendered references. A type tag is useful for listings or when precise
+dependencies cannot be projected, but it invalidates every cache object carrying that type.
 
-## Preview bypass middleware
+Netlify accepts a comma-separated `Netlify-Cache-Tag` list. Deduplicate tags and stay within the
+provider limits documented for tag count and length.
 
-File: `server/middleware/sanity-preview-cache.ts`
+## Why the default Nitro cache is excluded
+
+Without an explicitly shared `nitro.storage` driver, a cached handler can retain different entries in
+different serverless instances. Netlify tag purge cannot clear those entries. A common failure is:
+
+1. Webhook purges Netlify successfully.
+2. The next request reaches another warm function instance.
+3. Its Nitro cache returns old Sanity data.
+4. Netlify stores that old response again with a fresh 24-hour TTL.
+
+Use a plain `defineEventHandler` for `/api/sanity/*`. Add a Nitro layer only after providing a shared
+driver, deterministic keys, coordinated Nitro-before-Netlify invalidation, and a short fallback TTL.
+That is a separate architecture, not a local handler optimization.
+
+## Sanity API-CDN consistency choice
+
+Sanity recommends its API CDN for end-user reads, but recommends the live API when responding to
+webhooks. The webhook can reach Netlify before Sanity API-CDN invalidation has propagated, so the
+first Netlify regeneration can still read the previous result.
+
+Choose per route:
+
+### Scale-first default
+
+- Keep the module client anonymous with `useCdn: true`.
+- Let Netlify and the Sanity API CDN absorb heavy traffic.
+- Accept a brief eventual-consistency window.
+- Keep the finite Netlify TTL and an authenticated manual purge path as recovery controls.
+- Monitor for a new durable entry created immediately after publish that still contains the old
+  revision.
+
+### Freshness-critical regeneration
+
+- Fetch published data from a dedicated server client with `useCdn: false`.
+- Keep the Netlify durable cache, so the live Sanity API is called only on Netlify misses, expiry, or
+  purge rather than once per visitor.
+- Use this for prices, availability, legal text, or any route where repopulating a 24-hour cache with
+  stale data is unacceptable.
+
+A fixed sleep in the webhook reduces the race but does not prove API-CDN propagation and must not be
+documented as a freshness guarantee.
+
+## Signed webhook
+
+Use a POST-only route, verify the signature over the raw body, separately enforce a short signature
+age, strictly parse `_id` and `_type`, and purge both tags. `@sanity/webhook` validates the HMAC but
+does not reject an old correctly signed timestamp.
 
 ```ts
-// server/middleware/sanity-preview-cache.ts
-export default defineEventHandler((event) => {
-  const path = getRequestPath(event)
-  if (!path.startsWith('/api/') && !path.match(/\.(js|css|woff|ico|png|svg)$/)) {
-    // Vary on Cookie only for page routes — avoids fragmenting the CDN cache for API
-    // responses and static assets served to anonymous visitors
-    appendHeader(event, 'Vary', 'Cookie')
+// server/utils/sanityWebhook.ts
+import { decodeSignatureHeader } from '@sanity/webhook'
+
+const maxSignatureAge = 5 * 60 * 1000
+const sanityIdPattern = /^[\w.-]{1,256}$/
+const sanityTypePattern = /^[\w-]{1,128}$/
+
+export function hasFreshWebhookSignature(signature: string, now = Date.now()) {
+  try {
+    const { timestamp } = decodeSignatureHeader(signature)
+    return Math.abs(now - timestamp) <= maxSignatureAge
+  }
+  catch {
+    return false
+  }
+}
+
+export function parseRevalidateBody(rawBody: string) {
+  let value: unknown
+  try {
+    value = JSON.parse(rawBody)
+  }
+  catch {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid JSON body' })
   }
 
-  const cookies = parseCookies(event)
-  if (cookies['sanity-preview-id']) {
-    // Disable all caching for preview sessions
-    setHeader(event, 'cache-control', 'no-store')
-    event.context.nitro = event.context.nitro ?? {}
-    event.context.nitro.noCache = true
+  if (
+    !value
+    || typeof value !== 'object'
+    || !('_id' in value)
+    || !('_type' in value)
+    || typeof value._id !== 'string'
+    || typeof value._type !== 'string'
+    || !sanityIdPattern.test(value._id)
+    || !sanityTypePattern.test(value._type)
+  ) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid webhook payload' })
   }
-})
-```
 
-- `Vary: Cookie` is set **only on page routes** — not on `/api/*` or static assets — to avoid fragmenting the CDN cache for regular visitors
-- When the `sanity-preview-id` cookie is present, `no-store` prevents any CDN or browser caching
-- `event.context.nitro.noCache = true` disables Nitro ISR/SWR for that request
-
----
-
-## Cache tagging (`app/composables/useCacheTag.ts`)
-
-Cache tags enable surgical CDN purge — only pages that rendered a specific document are purged
-when that document changes in Sanity.
-
-```ts
-// app/composables/useCacheTag.ts
-export const useCacheTag = (tags: string | string[]) => {
-  if (import.meta.server) {
-    const event = useRequestEvent()
-    if (event) {
-      const value = Array.isArray(tags) ? tags.join(',') : tags
-      setResponseHeader(event, 'Netlify-Cache-Tag', value)
-    }
-  }
+  return { _id: value._id, _type: value._type }
 }
 ```
-
-- Runs server-side only (`import.meta.server`)
-- Sets the `Netlify-Cache-Tag` header with one or more Sanity document tags
-- Accepts a single `string` or an `array` of strings — array is joined as comma-separated
-- Uses `setResponseHeader` (overwrites) rather than `appendHeader` (appends) to avoid duplicate tag headers
-- Netlify uses these tags to purge exactly the pages that rendered those documents
-
-**Usage patterns:**
-
-```ts
-// Single-document page (e.g. /posts/[slug])
-if (post.value) {
-  useCacheTag(post.value._id)
-}
-
-// Listing page — tag with both the listing doc id and the content type
-if (listing.value) {
-  useCacheTag([listing.value._id, 'post'])
-}
-
-// Listing page with multiple referenced types
-if (listing.value) {
-  useCacheTag([listing.value._id, 'post', 'category'])
-}
-```
-
-> **IMPORTANT:** `useCacheTag` uses `setResponseHeader` which **overwrites** on each call.
-> Always pass all tags in a **single array call**. Never call `useCacheTag` multiple times on
-> the same page — only the last call's tags will be set.
-
----
-
-## `POST /api/cache/revalidate` — Sanity webhook invalidation
-
-Triggered by a Sanity webhook on document publish. Validates the webhook secret, then purges
-**two independent caches**: the Netlify CDN (by document `_id`/`_type` tag) and Nitro's own
-`defineCachedEventHandler` storage backing the `/api/sanity/*` endpoints. These are separate
-layers — purging only the CDN tag leaves the Nitro-level cache serving stale data for up to
-`cdnMaxAge` (typically 24h), even though the webhook returns success. This is the single most
-common cause of "the webhook fired (200/202) but the content is still stale" reports.
-
-### Nitro cache keys need to be reconstructable
-
-`defineCachedEventHandler` composes its storage key internally as
-`[base, group, name, escapeKey(customKey) + '.json'].join(':')`, where `escapeKey` strips all
-non-word characters. By default no route passes `base`/`group`/`name`, so Nitro falls back to
-internal defaults — a private implementation detail, not a stable public API. **Pin these three
-values explicitly** via a shared options object so the revalidate handler can reconstruct the
-exact same storage key and remove it:
-
-```ts
-// server/utils/sanityCache.ts
-const CACHE_BASE = '/cache'
-const CACHE_GROUP = 'sanity'
-const CACHE_NAME = 'sanity'
-
-export const sanityCacheOpts = { base: CACHE_BASE, group: CACHE_GROUP, name: CACHE_NAME }
-
-/** Mirror `i18n.locales` in `nuxt.config.ts`. */
-export const SUPPORTED_LOCALES = ['en'] as const
-
-function toStorageKey(key: string) {
-  return [CACHE_BASE, CACHE_GROUP, CACHE_NAME, `${key.replace(/\W/g, '')}.json`].join(':')
-}
-
-export async function purgeSanityCacheKeys(keys: string[]) {
-  const storage = useStorage()
-  await Promise.all(keys.map(key => storage.removeItem(toStorageKey(key))))
-}
-```
-
-`SUPPORTED_LOCALES = ['en']` above is already the **single-locale** case — one active `i18n`
-locale, one entry in the array. For a project with **no `@nuxtjs/i18n` at all**, drop
-`SUPPORTED_LOCALES` and the locale loop entirely — cache keys have no `:<lang>` segment. See
-"Locale variants" in `core-server-routes.md` for the `getKey`/`resolveNitroCacheKeys` shape in
-each case (multi-locale, single-locale, no i18n).
-
-Spread `...sanityCacheOpts` into every `defineCachedEventHandler`'s options (see
-`core-server-routes.md` and `arch-extension-pattern.md` for the updated endpoint template):
-
-```ts
-export default defineCachedEventHandler(handler, {
-  ...sanityCacheOpts,
-  maxAge: cdnMaxAge,
-  getKey: event => `home:${lang}`,
-})
-```
-
-### The webhook handler
 
 ```ts
 // server/api/cache/revalidate.post.ts
 import { purgeCache } from '@netlify/functions'
-
-interface RevalidateBody {
-  _id?: string
-  _type?: string
-  slug?: string
-}
-
-/**
- * Maps a webhook payload to the raw Nitro cache keys backing the
- * `/api/sanity/*` endpoint for that document type. When a new document type
- * is added, its cache key(s) MUST be added here too — otherwise that type
- * silently inherits the stale-cache bug this handler exists to prevent.
- */
-function resolveNitroCacheKeys(body: RevalidateBody): string[] {
-  const { _type, slug } = body
-  switch (_type) {
-    case 'home':
-      return SUPPORTED_LOCALES.map(lang => `home:${lang}`)
-    case 'page':
-      return slug ? SUPPORTED_LOCALES.map(lang => `page:${lang}:${slug}`) : []
-    default:
-      return []
-  }
-}
+import { isValidSignature } from '@sanity/webhook'
 
 export default defineEventHandler(async (event) => {
-  const secret = getHeader(event, 'x-sanity-webhook-secret')
-  if (secret !== useRuntimeConfig().sanityWebhookSecret) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
+  setNoStore(event)
+  const rawBody = (await readRawBody(event)) ?? ''
+  const signature = getHeader(event, 'sanity-webhook-signature') ?? ''
+  const config = useRuntimeConfig(event)
+
+  if (!config.sanityWebhookSecret) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Sanity webhook secret is not configured',
+    })
   }
 
-  const body = await readBody<RevalidateBody>(event)
+  if (
+    !hasFreshWebhookSignature(signature)
+    || !(await isValidSignature(rawBody, signature, config.sanityWebhookSecret))
+  ) {
+    throw createError({ statusCode: 401, statusMessage: 'Invalid webhook signature' })
+  }
 
-  // Purge by both _id (individual page) and _type (listing pages for that content type)
-  const tags = [body?._id, body?._type].filter((tag): tag is string => Boolean(tag))
-
-  await Promise.all([
-    purgeCache({ tags }),
-    purgeSanityCacheKeys(resolveNitroCacheKeys(body)),
-  ])
-
-  return { purged: true, tags }
+  const body = parseRevalidateBody(rawBody)
+  await purgeCache({ tags: [body._id, body._type] })
+  return new Response('Purged successfully!', { status: 202 })
 })
 ```
 
-> **GROQ projection:** The Sanity webhook must include `_type` (and `slug`, for slug-parameterised
-> types) in its projection so the handler receives them: `{ _id, _type, "slug": slug.current }`.
-> Fields that don't apply to a given document type simply come through as `null` — harmless.
+Configure a Sanity document webhook with POST, the same secret, create/update/delete events, drafts
+and versions disabled, and projection `{ _id, _type }`. Delete/unpublish events must be included so a
+removed document cannot remain cached until TTL expiry.
 
-> **Warning:** Without `_type` purge, listing pages that reference new documents will never
-> refresh after a publish — they stay stale until a full redeploy.
+Purge is idempotent, so duplicate delivery is safe. Sanity retries only a small number of retryable
+failures and webhooks may be delayed or missed; retain finite TTLs and inspect the webhook attempts
+log during incidents. For larger processing workflows, use `idempotency-key` and a queue, but a simple
+tag purge does not need durable deduplication.
 
-> **Webhook delivery isn't guaranteed exactly-once.** `@sanity/webhook`'s `isValidSignature`
-> already enforces a timestamp check against the signed payload, which mitigates naive replay —
-> you don't need to add your own timing logic on top of it. But Sanity does not guarantee
-> delivery order or that every event arrives, so treat the webhook purely as a trigger to
-> re-fetch/purge rather than a source of truth, and consider a periodic reconciliation job (e.g.
-> a scheduled full purge or re-validation) as a backstop for missed deliveries — a
-> shared-secret header check alone does not solve for dropped or out-of-order events.
+## Optional manual purge
 
-> **Warning:** Do NOT call `useStorage('cache').clear()` here. `unstorage`'s `clear(base?)` wipes
-> the **entire storage mount** when called with no `base` argument — and Nitro's default `cache`
-> mount is shared by every `defineCachedEventHandler` key (`page:*`, `home:*`, etc.) as well as
-> ISR. A single document publish would purge every cached page in every locale, not just the
-> entries tied to that document — a cache stampede, not a targeted invalidation. Use
-> `purgeSanityCacheKeys` (above) for targeted invalidation instead — it removes only the specific
-> keys resolved from the webhook payload.
+A separately authenticated POST endpoint may call `purgeCache({ tags })` for incident recovery and
+whole-site purge when no tags are provided. It is optional, must be no-store, must fail closed when
+its secret is absent, and must never accept a secret in the URL. Whole-site purge causes a cold-cache
+wave and should not be the normal webhook path.
 
----
+## Diagnostics
 
-## `POST /api/cache/purge` — manual / deploy purge
+Inspect deployed response headers rather than source assumptions:
 
-Used for manual cache clearing or post-deploy hooks. Validates a shared secret, then purges by
-`_id` tag or performs a full CDN purge.
-
-```ts
-// server/api/cache/purge.post.ts
-import { purgeCache } from '@netlify/functions'
-
-export default defineEventHandler(async (event) => {
-  const secret = getHeader(event, 'x-purge-secret')
-  if (secret !== useRuntimeConfig().purgeSecret) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  const { _id } = await readBody<{ _id?: string }>(event)
-
-  if (_id) {
-    // Surgical purge: only pages tagged with this _id
-    await purgeCache({ tags: [_id] })
-  } else {
-    // Full CDN purge + clear all Nitro cache keys
-    await purgeCache({})
-    const storage = useStorage('cache')
-    const keys = await storage.getKeys()
-    await Promise.all(keys.map((k) => storage.removeItem(k)))
-  }
-
-  return { purged: true }
-})
+```sh
+curl -sS -D - -o /dev/null 'https://example.com/api/sanity/page?lang=en&slug=about'
+curl -sS -D - -o /dev/null 'https://example.com/about'
 ```
 
----
+Useful Netlify signals include `cache-status`, `age`, `netlify-vary`, and the dedicated CDN policy.
+`Netlify-Cache-Tag` may be stripped from the client-facing response, so verify tagging behaviorally:
+purge a tag and confirm the next matching response is regenerated.
 
-## Netlify note
+When stale content appears:
 
-`purgeCache` is imported from `@netlify/functions` and is Netlify-specific. When deploying to a
-different platform, replace it with that platform's CDN purge API.
+1. Compare the cached page, the JSON endpoint, and a variation-forced request if query variation is
+   enabled.
+2. Query Sanity through both the API CDN and live API.
+3. If the live API is correct but the API CDN is stale, the upstream propagation race is active.
+4. If JSON is fresh but page HTML is stale, the page tag or page purge is missing.
+5. If page reload is fresh but client navigation is stale, the JSON response tag or Nuxt payload key
+   is wrong.
+6. If both fresh and cached variants are stale, the comparison does not clear the HTML cache; inspect
+   the upstream Sanity perspective, API choice, and publication state.
 
----
+## Docs
 
-## Debug headers
-
-Use these response headers to verify cache behaviour:
-
-| Header | Values | Provider |
-|--------|--------|----------|
-| `X-Cache` | `HIT` / `MISS` | Netlify CDN |
-| `Cf-Cache-Status` | `HIT` / `MISS` / `EXPIRED` | Cloudflare (if used) |
-| `Cache-Control` | Full policy string | Any |
-| `Netlify-Cache-Tag` | Tag(s) registered for the response | Netlify |
-
----
-
-## Environment variables
-
-| Variable | Purpose |
-|----------|---------|
-| `NUXT_PURGE_SECRET` | Shared secret for `POST /api/cache/purge` (manual/deploy purge) |
-| `NUXT_SANITY_WEBHOOK_SECRET` | Shared secret for `POST /api/cache/revalidate` (Sanity webhook) |
-
-Both map to `runtimeConfig` automatically via Nuxt's `NUXT_*` convention:
-
-```ts
-// nuxt.config.ts
-runtimeConfig: {
-  purgeSecret: '',           // set via NUXT_PURGE_SECRET
-  sanityWebhookSecret: '',   // set via NUXT_SANITY_WEBHOOK_SECRET
-},
-```
-
-Both secrets must be present in **four places**:
-
-1. `nuxt.config.ts` `runtimeConfig` — declares the key (empty string placeholder)
-2. `.env` — local development value
-3. `.env.example` — placeholder so other developers know the variable is required
-4. Netlify environment variables — production value
-
-> **Warning:** If `NUXT_SANITY_WEBHOOK_SECRET` is missing from the runtime environment,
-> `useRuntimeConfig().sanityWebhookSecret` is `''` and never matches the incoming header —
-> every webhook call returns 401 with no visible error in Studio.
+- Netlify caching and variation: https://docs.netlify.com/build/caching/caching-overview/
+- Netlify `purgeCache`: https://docs.netlify.com/build/functions/api/#purgecache
+- Sanity API CDN: https://www.sanity.io/docs/content-lake/api-cdn
+- Sanity webhook best practices: https://www.sanity.io/docs/content-lake/webhook-best-practices
+- `@sanity/webhook`: https://github.com/sanity-io/webhook-toolkit

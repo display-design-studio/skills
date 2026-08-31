@@ -1,147 +1,98 @@
-# Query Key Stability and Reactive Parameters
+# Query Keys, Reactive Parameters, and Client Data
 
-## Why it matters
+This rule covers Nuxt async-data state. HTTP/CDN caching and webhook invalidation are separate and
+covered by `perf-cdn-caching.md`.
 
-`useSanityQuery` uses `useAsyncData` internally and derives a cache key from
-a hash of the query string and params. If the cache key is unstable — for example,
-because params is a new object literal on every render — data becomes stale or
-re-fetches constantly. If reactive params are passed incorrectly, queries do not
-re-run when dependencies change.
+## How `useSanityQuery` keys data
 
----
+`@nuxtjs/sanity@2.5` creates a Nuxt async-data key from a hash of the query plus the parameter values
+present when the composable is called. It then watches reactive parameters and refreshes the query
+when they change.
 
-## How cache keys are derived
-
-By default, the key is computed from the GROQ query string + serialized params.
-This works reliably only when params is a stable reference (a `computed` or `ref`).
-
-An inline object literal creates a new reference on each render cycle, producing
-an unpredictable key and causing cache misses.
-
----
-
-## Reactive params — correct pattern
-
-```vue
-<script setup lang="ts">
-const route = useRoute()
-
-// ✅ computed ref — stable reference, re-runs query when slug changes
-const params = computed(() => ({ slug: route.params.slug as string }))
-const { data: post } = await useSanityQuery<Post>(query, params)
-</script>
-```
-
----
-
-## Reactive params — incorrect pattern
-
-```vue
-<script setup lang="ts">
-const route = useRoute()
-
-// ❌ Inline object — new reference every render, key mismatch, possible stale data
-const { data: post } = await useSanityQuery<Post>(query, { slug: route.params.slug })
-</script>
-```
-
----
-
-## Explicit cache key
-
-Override the auto-generated key when you need predictable cache invalidation:
+An inline object created once in `<script setup>` does not change identity on every Vue render. Its
+real limitation is that a copied route or locale value is not reactive:
 
 ```ts
-const { data, refresh } = await useSanityQuery<Post>(query, params, {
-  key: `post-${route.params.slug}`,
+// Snapshot: does not update when Nuxt reuses the component for another slug
+useSanityQuery(postQuery, { slug: route.params.slug })
+```
+
+Use reactive getters:
+
+```ts
+const params = reactive({
+  get slug() {
+    return route.params.slug as string
+  },
+  get lang() {
+    return locale.value
+  },
+})
+
+const { data } = await useSanityQuery<PostQueryResult>(postQuery, params)
+```
+
+The Display Starter accepts a computed object at its composable boundary and maps it into these
+reactive getters before calling `useSanityQuery`.
+
+## Explicit keys
+
+Pass `key` only to control Nuxt async-data sharing or avoid a deliberate collision. Do not use it as
+a substitute for reactive parameters.
+
+```ts
+const { data } = await useSanityQuery(postQuery, params, {
+  key: `post-${locale.value}-${route.params.slug}`,
 })
 ```
 
----
+If the route can change without remounting, a fixed explicit key still relies on the reactive params
+watcher for refresh. Keep the key deterministic and do not include secrets or high-cardinality
+session values.
 
-## Server-side cache key normalisation (`buildSanityCacheKey`)
+## Client refresh and clearing
 
-When building server-side cache keys for handlers with composite or variable param sets, object
-key insertion order can vary between callers, causing `JSON.stringify` to produce different strings
-for semantically identical params. Use a deep-sorting helper to prevent these phantom cache misses:
-
-```ts
-// utils/sanity-cache.ts
-function sortKeysDeep(obj: unknown): unknown {
-  if (Array.isArray(obj)) return obj.map(sortKeysDeep)
-  if (obj !== null && typeof obj === 'object') {
-    return Object.fromEntries(
-      Object.keys(obj as object)
-        .sort()
-        .map((k) => [k, sortKeysDeep((obj as Record<string, unknown>)[k])])
-    )
-  }
-  return obj
-}
-
-export function buildSanityCacheKey(scope: string, params: Record<string, unknown>): string {
-  return `${scope}:${JSON.stringify(sortKeysDeep(params))}`
-}
-```
-
-Use `buildSanityCacheKey` in the `getKey` callback of `defineCachedEventHandler` when the param
-shape is variable or comes from multiple call sites.
-
----
-
-## `stega: false` on server-side fetches
-
-> **Note:** All server-side `sanity.fetch()` calls must pass `{ stega: false }` as the third
-> argument:
->
-> ```ts
-> return sanity.fetch(query, params, { stega: false })
-> ```
->
-> Sanity's stega encoding injects invisible metadata into string fields to power Visual Editing
-> overlays. If this leaks into a cached API response it will be served to regular visitors who
-> have no Visual Editing context. See `features-visual-editing.md` for the full stega explanation.
-
----
-
-## useSanityQuery vs useLazySanityQuery for performance
-
-| | `useSanityQuery` | `useLazySanityQuery` |
-|---|---|---|
-| SSR | Yes — data included in page payload | No — fetched client-side after mount |
-| Navigation blocking | Yes | No |
-| Best for | Above-fold critical data | Below-fold, secondary data |
-| SEO | ✅ Content in initial HTML | ❌ Content not in initial HTML |
-
----
-
-## Cache invalidation
-
-Manual refresh after a mutation or webhook:
+`refresh()` refetches one composable instance. `refreshNuxtData(key)` and `clearNuxtData(key)` operate
+on Nuxt client/server-render payload state for the current application process. They do not purge
+Netlify, browser caches, or the Sanity API CDN.
 
 ```ts
-// Refresh a specific query
-const { data, refresh } = await useSanityQuery<Post[]>(query)
+const { refresh } = await useSanityQuery(postQuery, params)
 await refresh()
 
-// Clear by key (from another composable or route handler)
-clearNuxtData('post-hello-world')
+clearNuxtData('post-about')
 ```
 
----
+Never document a server webhook that calls `clearNuxtData()` as CDN invalidation. The Display Starter
+webhook calls Netlify `purgeCache({ tags })`.
 
-## Avoiding stale CDN data
+## Public versus preview fetches
 
-Sanity CDN caches responses for ~60 seconds. Options:
+- Public pages call `/api/sanity/*`; Netlify controls the HTTP response cache.
+- Preview pages call `useSanityQuery`; the module controls perspective, stega, proxying, and live
+  updates.
+- Public server fetches pass `{ stega: false }`.
+- Changing `useCdn` chooses Sanity's API CDN versus live API; it does not clear Nuxt or Netlify state.
 
-1. Set `useCdn: false` in `sanity` config for always-fresh data (higher latency)
-2. Use `useCdn: true` and call `refresh()` after known content updates
-3. Use Sanity webhooks to trigger `clearNuxtData` on the server
+Do not assign a fixed "Sanity CDN caches for N seconds" value. Sanity manages API-CDN freshness and
+invalidation, can serve stale content during propagation or an outage, and does not expose a simple
+application-controlled TTL.
 
----
+## Lazy queries
+
+`useLazySanityQuery` avoids blocking client navigation but can still execute during SSR. Use it for
+non-critical data where a loading state is acceptable, not as a blanket SEO/client-only switch.
+
+## Debug sequence
+
+1. Log the resolved query parameters when the route or locale changes.
+2. Confirm the parameter object is reactive and the query refreshes.
+3. Check for an explicit key shared by unrelated queries.
+4. Inspect the Nuxt payload separately from the `/api/sanity/*` response.
+5. If the endpoint itself is stale, move to `perf-cdn-caching.md`; clearing Nuxt data cannot fix it.
 
 ## Docs
 
-- useSanityQuery options: https://sanity.nuxtjs.org/composables/use-sanity-query
-- Nuxt useAsyncData: https://nuxt.com/docs/api/composables/use-async-data
-- clearNuxtData: https://nuxt.com/docs/api/utils/clear-nuxt-data
+- Nuxt Sanity query composable: https://sanity.nuxtjs.org/composables/use-sanity-query
+- Nuxt `useAsyncData`: https://nuxt.com/docs/api/composables/use-async-data
+- Nuxt `clearNuxtData`: https://nuxt.com/docs/api/utils/clear-nuxt-data

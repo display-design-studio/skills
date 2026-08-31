@@ -1,211 +1,123 @@
 # Nitro Server Routes with Sanity
 
-## Why it matters
+## Accessing the client
 
-Server routes can access private datasets and auth tokens that must never reach
-the client bundle. `validateSanityQuery` prevents query injection when proxying
-user-supplied GROQ queries. Tokens in `runtimeConfig.public` are shipped to every
-client — a security breach.
-
----
-
-## Accessing useSanity() in a Nitro server route
-
-In `server/api/*.ts` files, import `useSanity` from `#imports`:
+`useSanity()` is auto-imported in Nitro server routes by `@nuxtjs/sanity`. An explicit import from
+`#imports` is also valid.
 
 ```ts
-// server/api/posts.get.ts
-import { useSanity } from '#imports'
-
-export default defineEventHandler(async (event) => {
-  const client = useSanity()
-  const posts = await client.fetch<Post[]>(`*[_type == "post"] | order(_createdAt desc)`)
-  return posts
+export default defineEventHandler(async () => {
+  const sanity = useSanity()
+  return sanity.fetch<Post[]>(postsQuery, {}, { stega: false })
 })
 ```
 
-> `useSanity` in server routes uses the module's server-side client: no CDN, and automatically includes the token from `runtimeConfig.sanity.token` (set via `NUXT_SANITY_TOKEN`) when present.
+The server client follows the module configuration. It uses the Sanity API CDN when `useCdn: true`
+and remains anonymous unless a token was deliberately configured. Public published-content routes
+should not inherit the visual-editing token.
 
----
+## Validate parameters, not query text interpolation
 
-## Using the auth token in server routes
-
-Configure the token in `runtimeConfig` (private), not `runtimeConfig.public`:
-
-```ts
-// nuxt.config.ts
-runtimeConfig: {
-  sanity: {
-    token: '', // set via NUXT_SANITY_TOKEN env var at runtime
-  },
-},
-
-sanity: {
-  projectId: process.env.NUXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: 'production',
-  apiVersion: '2024-01-01',
-  useCdn: false,
-},
-```
-
-```env
-# .env
-NUXT_SANITY_TOKEN=sk...   # private — NEVER use NUXT_PUBLIC_SANITY_TOKEN
-```
-
-The module automatically uses `runtimeConfig.sanity.token` for server-side requests when set.
-
----
-
-## validateSanityQuery — prevent query injection
-
-Use `validateSanityQuery` whenever you accept a user-supplied GROQ query string:
+Use fixed queries and pass user input as GROQ parameters. Validate transport shape and application
+constraints before querying: reject arrays where one value is expected, unsupported locales,
+control characters, path separators, empty strings, and excessive lengths.
 
 ```ts
-// server/api/proxy.post.ts
-import { useSanity, validateSanityQuery } from '#imports'
+const { slug } = getQuery(event)
+const validatedSlug = validateSanitySlug(slug)
+return sanity.fetch(pageQuery, { slug: validatedSlug }, { stega: false })
+```
 
+GROQ parameters are JSON values and cannot inject query expressions. Never interpolate request data
+into a GROQ query string.
+
+## `validateSanityQuery` is an allowlist check
+
+If an endpoint accepts a query string, `validateSanityQuery()` checks it against queries extracted
+from the codebase. It returns `Promise<boolean>`; it does not return a sanitized query and it is not a
+general GROQ parser.
+
+```ts
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBody<{ query?: unknown, params?: Record<string, unknown> }>(event)
+  if (typeof body.query !== 'string')
+    throw createError({ statusCode: 400, statusMessage: 'Invalid query' })
 
-  // Validates the query is a read-only GROQ expression (no mutations)
-  const query = validateSanityQuery(body.query)
-
-  const client = useSanity()
-  return await client.fetch(query, body.params ?? {})
+  await validateSanityQuery(body.query)
+  return useSanity().fetch(body.query, body.params ?? {}, { stega: false })
 })
 ```
 
----
+Do not expose an unrestricted query proxy for a private dataset. An allowlisted proxy still needs
+authentication, authorization, request-size limits, and rate limiting appropriate to its audience.
 
-## Private dataset proxy pattern
+## Display Starter published endpoint
 
-Expose a server route that applies the auth token — the client never sees the token:
+Use a plain `defineEventHandler`. Start no-store, validate inputs, translate upstream failures to a
+502, return a no-store 404 for missing documents, and enable Netlify caching only for a successful
+published result.
 
 ```ts
-// server/api/preview.get.ts
+import type { PageQueryResult } from '#sanity-types'
+
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  // token is available server-side only via runtimeConfig.sanity.token
-  const client = useSanity()
-  const slug = getQuery(event).slug as string
-  return await client.fetch<Post>(
-    `*[_type == "post" && slug.current == $slug][0]`,
-    { slug }
-  )
-})
-```
+  setNoStore(event)
+  const lang = getSanityLocale(event)
+  const slug = getSanitySlug(event)
+  const sanity = useSanity()
+  let result: PageQueryResult
 
-Client calls `/api/preview?slug=hello` — token stays on the server.
-
----
-
-## Cached Sanity endpoint conventions
-
-Production handlers in `server/api/sanity/<scope>.get.ts` follow this template:
-
-```ts
-// server/api/sanity/<scope>.get.ts
-import { createError, getQuery, setHeader } from 'h3'
-import { <scope>Query } from '~~/shared/utils/<scope>Query'
-
-const browserMaxAge = 3600   // browser-fresh window
-const cdnMaxAge = 86400      // CDN s-maxage
-
-/**
- * GET /api/sanity/<scope>
- *
- * Returns <description> from Sanity CMS.
- * Served from Nitro in-memory cache; CDN adds s-maxage=86400.
- *
- * @query lang - BCP-47 locale code (default: 'en')
- * @query slug - Document slug (required)
- * @throws 400 if required params are missing
- * @cache max-age=3600 (browser), s-maxage=86400 (CDN)
- */
-export default defineCachedEventHandler(
-  async (event) => {
-    const { lang = 'en', slug } = getQuery<{ lang?: string; slug?: string }>(event)
-
-    if (!slug) throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
-
-    setHeader(
-      event,
-      'Cache-Control',
-      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
+  try {
+    result = await sanity.fetch<PageQueryResult>(
+      pageQuery,
+      { lang, slug },
+      { stega: false },
     )
-
-    const sanity = useSanity()
-    return sanity.fetch(<scope>Query, { lang, slug }, { stega: false })
-  },
-  {
-    ...sanityCacheOpts,
-    maxAge: cdnMaxAge,
-    getKey: (event) => {
-      const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
-      return `<scope>:${lang}:${slug}`   // stable format: 'scope:lang:param'
-    },
   }
-)
+  catch (error) {
+    console.error('Failed to fetch the Sanity page document', error)
+    throw createError({ statusCode: 502, statusMessage: 'Failed to fetch from Sanity' })
+  }
+
+  if (!result)
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+
+  setPublicCdnCache(event, [result._id, result._type])
+  return result
+})
 ```
 
-Conventions:
+`setPublicCdnCache` must emit:
 
-- **TTL constants** (`browserMaxAge`, `cdnMaxAge`) declared at module scope — easy to read and
-  override per route. Search routes use shorter values (`60` / `300`).
-- **`stega: false`** as third argument to `sanity.fetch()` — prevents stega encoding from leaking
-  into cached responses served to regular visitors.
-- **`getKey` format** `'scope:lang:param'` — stable, unique, human-readable.
-- **`@query` JSDoc tag** documents GET query parameters inline, mirroring `@throws` and `@cache`.
-- **`...sanityCacheOpts`** (from `server/utils/sanityCache.ts`) pins the Nitro cache storage key's
-  `base`/`group`/`name`, so the Sanity webhook handler can reconstruct and purge the exact key on
-  publish. Without it, the Sanity webhook can only purge the CDN edge cache — the endpoint keeps
-  serving stale data from Nitro's own cache until `maxAge` expires. See `perf-cdn-caching.md`.
+```http
+Cache-Control: public, max-age=0, must-revalidate
+Netlify-CDN-Cache-Control: public, durable, max-age=86400, stale-while-revalidate=3600
+Netlify-Cache-Tag: <document-id>,<document-type>
+```
 
-### Locale variants
+Do not use `defineCachedEventHandler` for these endpoints on serverless. Its storage is a separate
+cache layer that the Netlify tag purge does not invalidate reliably across instances.
 
-The template above assumes `@nuxtjs/i18n` with a `lang` query param. Adjust `getKey` and the
-matching `resolveNitroCacheKeys` case (in `server/api/cache/revalidate.ts`, see
-`perf-cdn-caching.md`) depending on how many locales the project actually has:
-
-| Setup | `getKey` | `resolveNitroCacheKeys` case |
-|---|---|---|
-| **Multi-locale** — several active `i18n.locales` | `` `<scope>:${lang}:${slug}` `` | `SUPPORTED_LOCALES.map(lang => \`<scope>:${lang}:${slug}\`)` |
-| **Single locale** — i18n installed, only one active locale (e.g. a starter project before a second language ships) | Same format, `` `<scope>:${lang}:${slug}` `` | `SUPPORTED_LOCALES` has one entry — `['en']` — but keep looping over it rather than hardcoding `en`, so adding a locale later is a one-line change, not a key-format migration |
-| **No i18n at all** — `@nuxtjs/i18n` not installed, no `lang` concept | Drop the locale segment entirely: `` `<scope>:${slug}` `` (or just `<scope>` for non-slug types) | Return a single key directly, no locale loop: `` slug ? [`<scope>:${slug}`] : [] `` |
-
-Don't keep a `:${lang}` segment "just in case" on a project with no i18n — it adds a fake stable
-segment (always `undefined` or a hardcoded default) that has to be remembered and stripped out
-again if i18n is added later. Match the key shape to what the project actually has today.
-
----
-
-## Incorrect
+For content where the first post-webhook regeneration must be current, derive a server-only live
+client for that fetch:
 
 ```ts
-// ❌ Token in runtimeConfig.public — ships to client bundle
-runtimeConfig: {
-  public: {
-    sanityToken: 'sk...', // exposed to browser
-  },
-},
+const sanity = useSanity()
+const liveClient = sanity.client.withConfig({ useCdn: false })
+const result = await liveClient.fetch(pageQuery, { lang, slug }, { stega: false })
 ```
 
-## Correct
+Keep `useCdn: true` for the starter's scale-first default and accept the propagation tradeoff
+documented in `perf-cdn-caching.md`.
 
-```ts
-// ✅ Token in runtimeConfig (private) — server only, set via NUXT_SANITY_TOKEN
-runtimeConfig: {
-  sanity: {
-    token: '', // auto-populated from NUXT_SANITY_TOKEN at runtime
-  },
-},
-```
+## Private dataset proxy
 
----
+A private-data endpoint must authenticate the caller before using a token and must always be
+`no-store`. Never expose the visual-editing token through a general public API route; use the module's
+validated `/_sanity/visual-editing/fetch` proxy for Presentation.
 
 ## Docs
 
 - Server routes: https://sanity.nuxtjs.org/server
-- validateSanityQuery: https://sanity.nuxtjs.org/server#validate-sanity-query
-- Nuxt server routes: https://nuxt.com/docs/guide/directory-structure/server
+- Module usage: https://sanity.nuxtjs.org/getting-started/usage
+- GROQ parameters: https://www.sanity.io/docs/specifications/groq-parameters

@@ -1,24 +1,18 @@
 # Module Setup and Configuration
 
-## Why it matters
-
-Misconfigured module options — wrong `apiVersion`, missing `useCdn` flag, or tokens
-hardcoded inline — cause runtime fetch failures, stale data, or security exposures.
-Get the configuration right first; every composable and component depends on it.
-
----
-
 ## Installation
 
 ```bash
 npx nuxi module add @nuxtjs/sanity
 ```
 
-This adds the module to `nuxt.config.ts` automatically.
+Install `@sanity/client` explicitly when using visual editing; the module's minimal client is not
+compatible with visual editing or live content.
 
----
+## Published-content configuration
 
-## Minimal nuxt.config.ts sanity block
+Keep public reads anonymous and enable the Sanity API CDN. Pin an API version that has been tested
+with the application; never compute it from the current date at runtime.
 
 ```ts
 // nuxt.config.ts
@@ -26,126 +20,94 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/sanity'],
 
   sanity: {
-    projectId: process.env.SANITY_PROJECT_ID,
-    dataset: process.env.SANITY_DATASET || 'production',
-    apiVersion: '2024-01-01', // always explicit — never omit or use 'v1'
-    useCdn: true,             // true for public reads; false for draft/visual editing
+    projectId: process.env.NUXT_SANITY_PROJECT_ID,
+    dataset: 'production',
+    apiVersion: '2026-03-10',
+    perspective: 'published',
+    useCdn: true,
   },
 })
 ```
 
----
+The module exposes the project, dataset, API version, perspective, and CDN setting to the browser as
+needed. Do not put a general read token in the public module configuration.
 
-## Environment variables
+## Visual-editing configuration
 
-Use Nuxt's `runtimeConfig` to keep secrets out of the client bundle. Nuxt auto-maps env vars to `runtimeConfig` at runtime (not build-time) using the `NUXT_*` / `NUXT_PUBLIC_*` prefix convention — no `process.env.*` needed in the config.
-
-**Public values** (projectId, dataset) — safe to expose to the browser:
+Visual editing needs a Viewer token so the module's private preview proxy can read drafts. Configure
+the token only under `sanity.visualEditing`; the module stores it in private runtime configuration
+and does not expose it to the browser.
 
 ```ts
-// nuxt.config.ts
-runtimeConfig: {
-  public: {
-    sanityProjectId: '',   // set via NUXT_PUBLIC_SANITY_PROJECT_ID
-    sanityDataset: 'production',  // override via NUXT_PUBLIC_SANITY_DATASET
-  },
-  // private — server only, never exposed to client:
-  sanity: {
-    token: '',   // set via NUXT_SANITY_TOKEN
+sanity: {
+  projectId: process.env.NUXT_SANITY_PROJECT_ID,
+  dataset: 'production',
+  apiVersion: '2026-03-10',
+  perspective: 'published',
+  useCdn: true,
+  visualEditing: {
+    token: process.env.NUXT_SANITY_VISUAL_EDITING_TOKEN,
+    studioUrl: process.env.NUXT_SANITY_VISUAL_EDITING_STUDIO_URL,
+    stega: true,
   },
 },
 ```
 
-**Required env vars (.env):**
 ```env
-NUXT_PUBLIC_SANITY_PROJECT_ID=your-project-id
-NUXT_PUBLIC_SANITY_DATASET=production
-NUXT_SANITY_TOKEN=sk...   # server-only — NEVER use NUXT_PUBLIC_SANITY_TOKEN
+NUXT_SANITY_PROJECT_ID=your-project-id
+NUXT_SANITY_VISUAL_EDITING_TOKEN=sk...
+NUXT_SANITY_VISUAL_EDITING_STUDIO_URL=https://your-studio.sanity.studio
+NUXT_SANITY_WEBHOOK_SECRET=replace-with-a-random-secret
 ```
 
-Nuxt resolves `NUXT_PUBLIC_*` → `runtimeConfig.public.*` and `NUXT_*` → `runtimeConfig.*` automatically at runtime, making it safe to change the token in deployment without a rebuild.
+Use the lowest-privilege Viewer token for preview. A mutation endpoint, if one is genuinely needed,
+must use a separate token with only the additional permissions it requires.
 
-**Additional env vars for the Display Nuxt Starter:**
-```env
-NUXT_SANITY_VISUAL_EDITING_STUDIO_URL=https://your-studio.sanity.studio  # Studio URL for visual editing overlay
-NUXT_PURGE_SECRET=...             # shared secret for manual cache purge endpoint
-NUXT_SANITY_WEBHOOK_SECRET=...    # shared secret for Sanity webhook (required in production)
-```
+## Choosing `useCdn`
 
-→ For the full caching setup (cache tags, CDN invalidation, preview bypass) see `perf-cdn-caching.md`.
+| Scenario | Setting | Reason |
+|---|---|---|
+| Public end-user reads | `true` | Fast, scalable API-CDN reads |
+| Freshness-critical server regeneration | `false` | Avoid an API-CDN propagation race after invalidation |
+| Draft/visual editing | Module-managed | Preview uses the private proxy and live API |
+| Authenticated published reads | Either | The API CDN supports them, but cache entries are segmented by token |
 
----
+With the default `disableSmartCdn: false`, the module disables `useCdn` when Nuxt preview mode is
+active. Setting `disableSmartCdn: true` disables that smart behavior and is rarely appropriate.
 
-## useCdn flag
+The Display Starter keeps `useCdn: true` for published reads. That is a scale-first, eventually
+consistent choice; see `perf-cdn-caching.md` for the webhook race and the freshness-first alternative.
 
-| Scenario | Setting |
-|----------|---------|
-| Public production reads | `useCdn: true` (faster, globally cached) |
-| Draft mode / visual editing | `useCdn: false` (bypasses CDN cache) |
-| Server routes with auth token | `useCdn: false` (required for authenticated requests) |
+## Runtime tokens outside visual editing
 
----
+Do not add `runtimeConfig.sanity.token` merely because a server route uses `useSanity()`. Anonymous
+published routes should stay anonymous. If a request-specific token is required, set it in a
+server-only Nuxt plugin with `useSanity().setToken(token)` or create a dedicated server-only client.
 
-## Named clients (multiple datasets or projects)
+## Named clients
+
+Use `additionalClients` for another project or dataset, not as a substitute for preview mode:
 
 ```ts
-// nuxt.config.ts
 sanity: {
-  projectId: process.env.SANITY_PROJECT_ID,
+  projectId: process.env.NUXT_SANITY_PROJECT_ID,
   dataset: 'production',
-  apiVersion: '2024-01-01',
+  apiVersion: '2026-03-10',
   useCdn: true,
   additionalClients: {
-    preview: {
-      projectId: process.env.SANITY_PROJECT_ID,
-      dataset: 'staging',
-      apiVersion: '2024-01-01',
-      useCdn: false,
+    archive: {
+      projectId: process.env.NUXT_SANITY_ARCHIVE_PROJECT_ID,
+      dataset: 'archive',
     },
   },
 },
 ```
 
-Access named client in composables: `useSanity('preview')`.
-
----
-
-## Incorrect
-
-```ts
-// ❌ Hardcoded credentials + ambiguous apiVersion
-sanity: {
-  projectId: 'abc123',
-  dataset: 'production',
-  apiVersion: 'v1',           // 'v1' is deprecated and may break
-  token: 'sk...',             // token in nuxt.config.ts ships to client bundle
-},
-```
-
-## Correct
-
-```ts
-// ✅ Env vars + explicit ISO apiVersion + no token in config
-sanity: {
-  projectId: process.env.SANITY_PROJECT_ID,
-  dataset: process.env.SANITY_DATASET || 'production',
-  apiVersion: '2024-01-01',
-  useCdn: true,
-},
-// token in runtimeConfig.sanity.token (private)
-```
-
----
-
-## Page-level caching with `routeRules`
-
-The Display Nuxt Starter uses `routeRules` in `nuxt.config.ts` to add CDN caching at the page
-level alongside the Nitro endpoint caching. See `perf-cdn-caching.md` for the full configuration.
-
----
+Access it with `useSanity('archive')`.
 
 ## Docs
 
-- Module README: https://github.com/nuxt-modules/sanity
-- Getting started: https://sanity.nuxtjs.org/getting-started/installation
-- Sanity API versioning: https://www.sanity.io/docs/api-versioning
+- Configuration: https://sanity.nuxtjs.org/getting-started/configuration
+- Visual editing: https://sanity.nuxtjs.org/getting-started/visual-editing
+- Sanity API CDN: https://www.sanity.io/docs/content-lake/api-cdn
+- API versioning: https://www.sanity.io/docs/api-versioning

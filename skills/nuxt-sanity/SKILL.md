@@ -1,12 +1,12 @@
 ---
 name: nuxt-sanity
 description: >-
-  @nuxtjs/sanity module integration best practices for Nuxt 3 apps connected
+  @nuxtjs/sanity module integration best practices for Nuxt 3 and Nuxt 4 apps connected
   to Sanity CMS (there is no separate `@sanity/nuxt` package). Covers
   useSanityQuery, useLazySanityQuery, useSanity, SanityImage, SanityContent
   (Portable Text), visual editing / live preview with stega, TypeScript
   typegen, named clients, and Nitro server routes.
-  Also covers starter architecture with cached Nitro endpoints,
+  Also covers the Display Starter architecture with Netlify-cached server routes,
   preview-switch composables, Netlify CDN caching, and cache tag invalidation.
   Use when the user mentions @nuxtjs/sanity, nuxt-sanity, useSanityQuery,
   SanityImage in Nuxt, or is building a Nuxt app that fetches data from Sanity.
@@ -14,7 +14,7 @@ description: >-
 
 # Nuxt + Sanity Integration Best Practices
 
-Best-practices guide for the `@nuxtjs/sanity` module (Nuxt 3). Covers module
+Best-practices guide for the `@nuxtjs/sanity` module (Nuxt 3 and 4). Covers module
 setup, composables, SSR data fetching, image handling, Portable Text, visual
 editing, TypeScript, and Nitro server routes.
 
@@ -49,7 +49,12 @@ editing, TypeScript, and Nitro server routes.
 → Read `rules/perf-cdn-caching.md`
 
 **IF experiencing stale CDN content after a Sanity publish (not query-level cache):**
-→ Read `rules/perf-cdn-caching.md`
+→ Read `rules/perf-cdn-caching.md` — start from "Diagnostics" and compare the live Sanity API,
+  Sanity API CDN, Netlify JSON, page HTML, and Nuxt payload separately
+
+**IF adding any cache in front of Sanity (`defineCachedEventHandler`, Nitro storage, longer TTLs):**
+→ Read `rules/perf-cdn-caching.md` first — every long-lived layer must have a reliable invalidation
+  path, and Sanity API-CDN propagation can race a downstream purge
 
 **IF experiencing stale data, cache misses, or reactive query bugs:**
 → Read `rules/perf-query-keys-and-caching.md`
@@ -60,6 +65,12 @@ editing, TypeScript, and Nitro server routes.
 **IF generating a dynamic sitemap from Sanity routes (works, case studies, etc.):**
 → Read `rules/features-sitemap.md`
 
+**IF the sitemap uses locale prefixes or per-locale slugs:**
+→ Read `rules/features-sitemap.md` then `rules/features-sitemap-i18n.md`
+
+**IF deriving page title, description, Open Graph, or other SEO metadata from Sanity:**
+→ Read `rules/features-seo-meta.md`
+
 ## Rule index
 
 | Topic | Description | File |
@@ -69,14 +80,16 @@ editing, TypeScript, and Nitro server routes.
 | Composables | useSanityQuery, useLazySanityQuery, useSanity usage, preview-switch pattern | [rules/core-composables.md](rules/core-composables.md) |
 | Server routes | Nitro server routes with useSanity, validateSanityQuery | [rules/core-server-routes.md](rules/core-server-routes.md) |
 | Starter architecture | Directory layout, data-flow, GROQ conventions, i18n | [rules/arch-starter-pattern.md](rules/arch-starter-pattern.md) |
-| Extension pattern | 4-step recipe: GROQ query → endpoint → composable → page | [rules/arch-extension-pattern.md](rules/arch-extension-pattern.md) |
-| CDN caching | Two-layer caching, preview bypass, cache tagging, webhook invalidation | [rules/perf-cdn-caching.md](rules/perf-cdn-caching.md) |
+| Extension pattern | Connected query, endpoint, composable, page, dependency-tag, and webhook recipe | [rules/arch-extension-pattern.md](rules/arch-extension-pattern.md) |
+| CDN caching | Browser, Netlify, and Sanity CDN policy; preview bypass and webhook invalidation | [rules/perf-cdn-caching.md](rules/perf-cdn-caching.md) |
 | SanityImage | SanityImage component, `@sanity/image-url` builder, @nuxt/image integration | [rules/features-sanity-image.md](rules/features-sanity-image.md) |
 | SanityContent | Portable Text rendering, custom components | [rules/features-sanity-content.md](rules/features-sanity-content.md) |
 | Visual editing | Stega, live preview, Presentation tool, draft mode | [rules/features-visual-editing.md](rules/features-visual-editing.md) |
 | Caching (queries) | Query key stability, reactive params, cache invalidation | [rules/perf-query-keys-and-caching.md](rules/perf-query-keys-and-caching.md) |
 | Debug | CORS, auth tokens, hydration errors, common pitfalls | [rules/debug-common-errors.md](rules/debug-common-errors.md) |
 | Sitemap | Dynamic sitemap sources, defineSitemapEventHandler, stegaClean on slugs | [rules/features-sitemap.md](rules/features-sitemap.md) |
+| Sitemap i18n | `prefix_except_default`, locale-specific slugs and sitemap assignment | [rules/features-sitemap-i18n.md](rules/features-sitemap-i18n.md) |
+| SEO metadata | `useSeoMeta` with cache-safe Sanity page data | [rules/features-seo-meta.md](rules/features-seo-meta.md) |
 
 ## Quick access by priority
 
