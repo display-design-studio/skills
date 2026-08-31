@@ -12,9 +12,16 @@ incorrectly causes silent rendering failures or unstyled / missing content.
 
 ```vue
 <script setup lang="ts">
+const route = useRoute()
+const params = reactive({
+  get slug() {
+    return route.params.slug as string
+  },
+})
+
 const { data: post } = await useSanityQuery<Post>(
   `*[_type == "post" && slug.current == $slug][0]{ body }`,
-  { slug: route.params.slug }
+  params,
 )
 </script>
 
@@ -89,11 +96,6 @@ const components = {
 ## Incorrect
 
 ```vue
-<!-- ❌ Wrapping SanityContent in a <div> when custom inline components emit block-level HTML -->
-<div class="prose">
-  <SanityContent :blocks="post.body" />
-</div>
-
 <!-- ❌ Passing serialized JSON string instead of array -->
 <SanityContent :blocks="JSON.stringify(post.body)" />
 ```
@@ -101,7 +103,7 @@ const components = {
 ## Correct
 
 ```vue
-<!-- ✅ Pass block array directly, apply styles via :components or parent wrapper -->
+<!-- ✅ Pass the block array directly; a semantic parent wrapper is valid -->
 <SanityContent
   :blocks="post.body"
   :components="components"
@@ -123,4 +125,4 @@ const components = {
 
 - SanityContent component: https://sanity.nuxtjs.org/components/sanity-content
 - Portable Text spec: https://github.com/portabletext/portabletext
-- Cross-reference: `sanity-best-practices/rules/pte-custom-components.md` for custom block design patterns
+- Cross-reference: `sanity-best-practices/references/portable-text.md` for custom block design patterns

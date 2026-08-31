@@ -1,204 +1,121 @@
-# useSanityQuery and useSanity Composables
+# `useSanityQuery` and `useSanity` Composables
 
-## Why it matters
+## Standard SSR data fetching
 
-`useSanityQuery` wraps `useAsyncData` — misusing it leads to double-fetching, stale cache,
-and hydration errors on the client. `useSanity()` is the raw client; using it directly in
-`<script setup>` without `useAsyncData` breaks SSR and fetches twice.
-
----
-
-## useSanityQuery — standard data fetching
+`useSanityQuery` wraps Nuxt's `useAsyncData`, participates in SSR, transfers its result in the Nuxt
+payload, and watches reactive parameters.
 
 ```vue
 <script setup lang="ts">
-const query = `*[_type == "post" && slug.current == $slug][0]`
-const params = computed(() => ({ slug: route.params.slug }))
-
-const { data: post, status, error, refresh } = await useSanityQuery(query, params)
-</script>
-```
-
-- Runs on server and hydrates on client (SSR-safe)
-- Returns `{ data, status, error, refresh }`
-- `data` is a `Ref<T | null>` — always check for null before rendering
-
----
-
-## Type safety with defineQuery
-
-When using `@nuxtjs/sanity`'s built-in typegen (`sanity.typegen` in `nuxt.config.ts` — there is
-no separate `@sanity/nuxt` package), wrap queries with `defineQuery` for automatic type inference: 
-
-```ts
-import { defineQuery } from 'groq'
-
-const postQuery = defineQuery(`*[_type == "post"][0]{ _id, title, body }`)
-const { data } = await useSanityQuery(postQuery)
-// data is typed automatically from GROQ result shape
-```
-
-→ For typegen setup, see `sanity-best-practices/rules/typegen-workflow.md`
-
-When not using typegen, pass a generic:
-
-```ts
-const { data } = await useSanityQuery<Post>(query, params)
-```
-
----
-
-## useLazySanityQuery — non-blocking navigation
-
-Use when the data is below the fold or you prefer the page to render immediately
-with a loading state rather than blocking navigation:
-
-```vue
-<script setup lang="ts">
-const { data: posts, status } = useLazySanityQuery(query)
-// no await — navigation is not blocked
-</script>
-```
-
-To reuse data that was already included in the SSR payload (avoiding a second network round-trip
-for below-fold content), pass `getCachedData`:
-
-```ts
-const { data } = useLazySanityQuery(query, params, {
-  key: `<scope>-${params.slug}`,
-  getCachedData: (key) => useNuxtApp().payload.data[key] ?? null,
+const route = useRoute()
+const params = reactive({
+  get slug() {
+    return route.params.slug as string
+  },
 })
+
+const { data: post, status, error, refresh }
+  = await useSanityQuery<PostQueryResult>(postQuery, params)
+</script>
 ```
 
+`data` is nullable. Handle both `error.value` and a valid null result before rendering or tagging a
+page response.
+
+## Reactive parameters and query keys
+
+`useSanityQuery` hashes the query and the parameter values once when creating its async-data key,
+then watches reactive parameters for refreshes. An inline object in `<script setup>` is not recreated
+on every Vue render, but it is non-reactive and will not update after route or locale changes.
+
+Use a stable `reactive` object with getters for the module composable. A `computed` parameter object
+is suitable at the page boundary and for `useFetch`, but the Display Starter converts it to reactive
+getters before passing it to `useSanityQuery`.
+
+Use an explicit `key` only when separate calls intentionally share Nuxt async data. The key itself is
+not a server/CDN invalidation mechanism.
+
+## Type safety
+
+Wrap exported queries with `defineQuery`. With module typegen enabled, generated result types follow
+the query variable name. The Display Starter instead imports Sanity CLI output through
+`#sanity-types`.
+
+```ts
+import type { PostQueryResult } from '#sanity-types'
+
+const { data } = await useSanityQuery<PostQueryResult>(postQuery, params)
+```
+
+See `arch-starter-pattern.md` for the starter's typegen choice.
+
+## Lazy queries
+
+`useLazySanityQuery` sets Nuxt async data to lazy mode. It does not block client-side navigation, but
+it can still run during SSR and contribute payload data. Render a loading state because `data` may be
+null while navigation continues.
+
 ```vue
+<script setup lang="ts">
+const { data: related, status } = useLazySanityQuery(relatedQuery, params)
+</script>
 
 <template>
-  <div v-if="status === 'pending'">Loading…</div>
-  <PostList v-else :posts="posts" />
+  <RelatedSkeleton v-if="status === 'pending'" />
+  <RelatedList v-else :items="related || []" />
 </template>
 ```
 
-| | `useSanityQuery` | `useLazySanityQuery` |
-|---|---|---|
-| Blocks navigation | Yes (awaited) | No |
-| SSR data | Included in payload | Fetched client-side |
-| When to use | Critical above-fold data | Non-critical / below-fold |
+## Raw client access
 
----
-
-## useSanity() — raw client access
-
-Use only for:
-- Live preview subscriptions
-- One-off mutations (not possible via composable)
-- Accessing named clients (`useSanity('preview')`)
+Use `useSanity()` for server routes, named clients, listeners, mutations, or client methods not
+wrapped by `useSanityQuery`. In component setup, wrap raw fetches in `useAsyncData` to avoid repeating
+them during client hydration.
 
 ```ts
-// Subscription example (client-side only)
-const client = useSanity()
-onMounted(() => {
-  const sub = client.client.listen(query, params).subscribe((update) => {
-    // handle real-time update
-  })
-  onUnmounted(() => sub.unsubscribe())
-})
+const sanity = useSanity()
+const { data } = await useAsyncData('articles', () => sanity.fetch(articlesQuery))
 ```
 
----
+Prefer the Live Content API for scalable public live updates. Use `client.listen()` only when the
+application needs mutation-level events.
 
-## Preview-switch composable pattern
+## Display Starter preview switch
 
-Use this pattern when you need a composable that serves a cached Nitro endpoint in production but
-bypasses the cache and fetches live draft data in preview mode.
-
-**When to use**: any page-level composable in the Display Nuxt Starter that should benefit from
-CDN caching in production and show live draft data with stega overlays in preview.
-
-`useSanityVisualEditingState()` returns the current visual editing state. The `enabled` flag may
-be `undefined` before hydration, so coerce with `Boolean()`:
+The public branch calls a server route backed by Netlify and Sanity CDN caching. The preview branch
+uses `useSanityQuery` so Presentation receives draft data, stega metadata, and live updates.
 
 ```ts
-const visualEditingState = useSanityVisualEditingState()
-const isPreview = computed(() => Boolean(visualEditingState?.enabled))
-```
+import type { MaybeRef } from 'vue'
+import type { PageQueryResult } from '#sanity-types'
+import { reactive, toValue } from 'vue'
 
-Full pattern (with `async`/`await` and explicit `isPreview` guard):
-
-```ts
-// app/composables/useSanity<Name>.ts
-// This starter uses the Sanity CLI's typegen output via the `#sanity-types` alias —
-// see arch-starter-pattern.md for why this differs from the module's native typegen.
-import type { <Name>QueryResult } from '#sanity-types'
-
-export const useSanity<Name> = async (params: { lang: string; slug?: string }) => {
+export function useSanityPage(params: MaybeRef<Required<SanityQueryParams>>) {
   const visualEditingState = useSanityVisualEditingState()
-  const isPreview = computed(() => Boolean(visualEditingState?.enabled))
-
-  if (isPreview.value) {
-    // Preview: live draft data, stega-encoded for Visual Editing overlays.
-    // Preview-state handling (including which perspective is used) is driven by the module's
-    // own preview composables — see useSanityPerspective()/useSanityPreviewPerspective() below —
-    // rather than a value you need to compute or pass yourself.
-    const { data } = await useSanityQuery<<Name>QueryResult>(<name>Query, params)
-    return data
-  }
-
-  // Production: cached Nitro endpoint → CDN-backed response, stega disabled
-  const { data } = await useFetch<<Name>QueryResult>('/api/sanity/<scope>', {
-    query: params
+  const previewParams = reactive({
+    get lang() {
+      return toValue(params).lang
+    },
+    get slug() {
+      return toValue(params).slug
+    },
   })
-  return data
+
+  if (Boolean(visualEditingState?.enabled))
+    return useSanityQuery<PageQueryResult>(pageQuery, previewParams)
+
+  return useFetch<PageQueryResult>('/api/sanity/page', {
+    query: () => toValue(params),
+  })
 }
 ```
 
-- **Production path**: `useFetch` hits the cached Nitro endpoint which serves CDN-backed data with
-  stega disabled — safe for public caching
-- **Preview path**: `useSanityQuery` goes directly to Sanity with stega encoding active so the
-  visual editing overlay knows which fields to annotate. `@nuxtjs/sanity` exposes dedicated
-  composables for inspecting/controlling the perspective instead of a single hidden auto-switch —
-  use `useSanityPerspective()` to read the active perspective and `useSanityPreviewPerspective()` /
-  `useIsSanityLivePreview()` when a composable needs to branch on preview state explicitly. Don't
-  assume a bare `useSanityQuery` call always resolves to `previewDrafts` with no configuration —
-  check these composables if a query isn't returning draft content as expected.
-
-→ See `arch-extension-pattern.md` for the full 4-step recipe that uses this pattern.
-
-**Visual editing mode**: `sanity.visualEditing.mode` defaults to `'live-visual-editing'`, which
-streams live draft updates to the overlay automatically (no manual refresh wiring needed) — this
-is the mode to use for the standard "Studio editor sees live changes, end user gets server-cached
-content" workflow, and needs no extra composable beyond the preview-switch pattern above. Use
-`'visual-editing'` for overlays without live streaming, or `'custom'` only if you're wiring the
-client plugin yourself via `useSanityVisualEditing()` — in `'custom'` mode (or when you need to
-check/react to live-mode state explicitly, e.g. for debugging), use `useSanityLiveMode()` to
-inspect or drive the live connection. Note `sanity.minimal: true` (the query-only micro client)
-is **incompatible** with `visualEditing` and `liveContent` — the module disables them if
-`minimal` is set.
-
----
-
-## Incorrect
-
-```vue
-<script setup lang="ts">
-// ❌ useSanity().fetch() in setup — fetches twice (server + client), no cache
-const client = useSanity()
-const post = await client.fetch(query, params)
-</script>
-```
-
-## Correct
-
-```vue
-<script setup lang="ts">
-// ✅ useSanityQuery — SSR-safe, cached, deduped
-const { data: post } = await useSanityQuery<Post>(query, params)
-</script>
-```
-
----
+Return the complete async-data object from both branches so pages receive consistent `data`, `error`,
+`status`, and `refresh` properties. Preview state is established during SSR by the module's validated
+preview cookie; do not switch branches based on an arbitrary client cookie.
 
 ## Docs
 
-- useSanityQuery: https://sanity.nuxtjs.org/composables/use-sanity-query
-- useSanity: https://sanity.nuxtjs.org/composables/use-sanity
-- Nuxt useAsyncData: https://nuxt.com/docs/api/composables/use-async-data
+- `useSanityQuery`: https://sanity.nuxtjs.org/composables/use-sanity-query
+- `useSanity`: https://sanity.nuxtjs.org/composables/use-sanity
+- Nuxt `useAsyncData`: https://nuxt.com/docs/api/composables/use-async-data

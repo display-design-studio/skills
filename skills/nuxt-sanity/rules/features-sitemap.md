@@ -1,108 +1,90 @@
-# Dynamic Sitemap with Sanity
+# Dynamic Sitemap URLs from Sanity
 
-## Why it matters
+Use an `@nuxtjs/sitemap` source for routes that exist only in Sanity. Static Nuxt pages are discovered
+separately and do not need to be duplicated in the source.
 
-`@nuxtjs/sitemap` supports **dynamic sources** via `sitemap.sources` in `nuxt.config.ts`.
-Without proper server handlers, dynamic Sanity-driven routes (works, case studies, etc.)
-are missing from the sitemap, hurting SEO indexing.
-
-Static pages are included automatically — sources are only needed for dynamic routes
-fetched from Sanity.
-
----
-
-## Incorrect
+## Starter configuration
 
 ```ts
-// nuxt.config.ts — no sources configured
-sitemap: {}
-
-// Dynamic routes from Sanity are never added to the sitemap
+sitemap: {
+  sources: ['/api/__sitemap__/urls'],
+  cacheMaxAgeSeconds: 86400,
+},
 ```
 
-```ts
-// server/api/__sitemap__/works.ts — slug not cleaned
-export default defineSitemapEventHandler(async () => {
-  const works = await useSanity().fetch(`*[_type == "work"]{ "slug": slug.current }`);
-  return works.map((w) => ({ loc: `/en/works/${w.slug}` }));
-  // ❌ stega-encoded slugs break URLs in visual editing context
-});
-```
+The sitemap module owns this 24-hour cache, so repeated sitemap requests do not repeatedly query
+Sanity. Route changes can take up to 24 hours to appear until sitemap-specific webhook invalidation is
+implemented. Do not place a second endpoint cache in front of it unless both layers participate in the
+same invalidation strategy.
 
----
+## Handler
 
-## Correct
-
-### `nuxt.config.ts`
+Fetch anonymous published content, disable stega at the source, validate the fields used in URLs, and
+translate upstream errors to 502 rather than returning an empty sitemap as if it were valid.
 
 ```ts
-export default defineNuxtConfig({
-  sitemap: {
-    sources: ['/api/__sitemap__/works', '/api/__sitemap__/case-studies'],
-    exclude: ['/showcase/**'],
-  },
-})
-```
-
-### Handler — shared slug (bilingual)
-
-Use when a single slug is shared across all locales:
-
-```ts
-// server/api/__sitemap__/works.ts
 import { stegaClean } from '@sanity/client/stega'
 
-export default defineSitemapEventHandler(async () => {
-  const query = `*[_type == "work" && visible == true]{ "slug": slug.current }`
-  const works = await useSanity().fetch<Array<{ slug: string }>>(query)
+interface SitemapPage {
+  slug: string
+  language: string
+}
 
-  return works.flatMap((work) => [
-    { loc: `/en/works/${stegaClean(work.slug)}`, _sitemap: 'en' },
-    { loc: `/it/works/${stegaClean(work.slug)}`, _sitemap: 'it' },
-  ])
+const localePrefixes = { en: '', it: '/it' } as const
+
+export default defineSitemapEventHandler(async () => {
+  const sanity = useSanity()
+  let pages: SitemapPage[]
+
+  try {
+    pages = await sanity.fetch<SitemapPage[]>(
+      `*[_type == "page" && defined(slug[language].current)] {
+        "slug": slug[language].current,
+        language
+      }`,
+      {},
+      { stega: false },
+    )
+  }
+  catch (error) {
+    console.error('Failed to fetch Sanity pages for the sitemap', error)
+    throw createError({ statusCode: 502, statusMessage: 'Failed to fetch from Sanity' })
+  }
+
+  return pages.flatMap((page) => {
+    const prefix = localePrefixes[page.language as keyof typeof localePrefixes]
+    const slug = stegaClean(page.slug)
+    if (prefix === undefined || !slug || slug.includes('/'))
+      return []
+
+    return [{
+      loc: `${prefix}/${slug}`,
+      _sitemap: page.language,
+    }]
+  })
 })
 ```
 
-### Handler — per-locale slug (bilingual)
+The locale-prefix map must follow the application's actual i18n strategy. For the Display Starter's
+`prefix_except_default` policy, English has no prefix and non-default locales do. See
+`features-sitemap-i18n.md` for the concrete implementation.
 
-Use when EN and IT have distinct slugs stored separately in Sanity:
+Even with `{ stega: false }`, `stegaClean()` is a cheap defensive boundary before a Sanity string is
+inserted into a URL. Also reject missing, unsupported, or path-breaking locale/slug values rather than
+emitting invalid sitemap entries.
 
-```ts
-// server/api/__sitemap__/case-studies.ts
-import { stegaClean } from '@sanity/client/stega'
+## Rules
 
-export default defineSitemapEventHandler(async () => {
-  const query = `*[_type == "caseStudy"]{ "slugEn": slug.en.current, "slugIt": slug.it.current }`
-  const caseStudies = await useSanity().fetch<Array<{ slugEn: string; slugIt: string }>>(query)
+- Keep sitemap queries on the published perspective.
+- Do not use a preview token or expose drafts in a public sitemap.
+- Do not hardcode `/en` when the default locale is unprefixed.
+- Keep `loc` relative or use the site's canonical configured origin consistently.
+- Assign `_sitemap` only when the sitemap module is configured for locale-specific output.
+- Do not swallow Sanity failures into an empty array; that can temporarily remove all dynamic URLs
+  from the generated sitemap.
 
-  return caseStudies.flatMap((cs) => [
-    { loc: `/en/case-studies/${stegaClean(cs.slugEn)}`, _sitemap: 'en' },
-    { loc: `/it/casi-studio/${stegaClean(cs.slugIt)}`, _sitemap: 'it' },
-  ])
-})
-```
+## Docs
 
----
-
-## Key rules
-
-- **Always call `stegaClean()` on slugs** before building `loc`. Sanity's visual editing
-  injects invisible stega encoding characters into field values; without cleaning, URLs
-  contain invisible characters that break sitemap validation and browser navigation.
-
-- **`_sitemap: "en"/"it"`** assigns each URL to the correct per-locale sitemap when
-  `@nuxtjs/i18n` generates separate sitemaps.
-
-- **`useSanity()`** is an auto-import from `@nuxtjs/sanity` — no explicit import needed
-  in server handlers.
-
-- **`defineSitemapEventHandler`** is an auto-import from `@nuxtjs/sitemap` — no explicit
-  import needed in server handlers.
-
----
-
-## Official docs
-
-- Sitemap sources: https://nuxtseo.com/sitemap/guides/dynamic-urls
-- `@nuxtjs/sitemap` event handlers: https://nuxtseo.com/sitemap/nitro/sitemap-event-handler
-- stegaClean: https://www.sanity.io/docs/presenting-content#ZvBhBpv9pjHBlPM
+- Dynamic sources: https://nuxtseo.com/sitemap/guides/dynamic-urls
+- Sitemap event handlers: https://nuxtseo.com/sitemap/nitro/sitemap-event-handler
+- i18n sitemap routing: `features-sitemap-i18n.md`

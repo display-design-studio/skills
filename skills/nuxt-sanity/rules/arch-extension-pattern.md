@@ -1,280 +1,167 @@
-# Adding a New Sanity Document Type — 6-Step Recipe
+# Adding a Sanity Document Type to the Display Starter
 
-> This recipe applies to the Display Nuxt Starter architecture. For the directory layout and
-> data-flow overview see `arch-starter-pattern.md`. For caching details see `perf-cdn-caching.md`.
->
-> **Workflow companion:** For the step-by-step checklist when adding a route in an existing
-> project see `add-route.md` (or equivalent workflow skill).
+Add a routed document type as one connected change: query, published endpoint, preview-switch
+composable, page, dependency tags, and webhook coverage.
 
----
+## 1. Define the query
 
-## Overview
-
-Every new Sanity document type requires six steps wired together in this order:
-
-1. `shared/utils/<type>Query.ts` — GROQ query
-2. `server/api/sanity/<type>.get.ts` — cached Nitro endpoint
-3. `app/composables/useSanity<Type>.ts` — preview-switch composable
-4. `app/pages/*.vue` — route page
-5. `server/api/cache/revalidate.ts` — register the type's cache key(s) for webhook invalidation
-6. Architecture documentation — update the route table
-
-Step 5 is the one most likely to be skipped — skipping it doesn't cause an error, it just means
-the new type's cache silently never gets invalidated by the webhook.
-
----
-
-## Step 1 — GROQ query (`shared/utils/<type>Query.ts`)
-
-Export the query with `defineQuery`. Always include `$lang`; add `$slug` for slug-parameterised types.
+Use parameters, project `_id` and `_type`, and include identity fields for every referenced document
+whose content is rendered.
 
 ```ts
-// shared/utils/homeQuery.ts
+// shared/utils/articleQuery.ts
 import { defineQuery } from 'groq'
 
-export const homeQuery = defineQuery(`
-  *[_type == "home" && language == $lang][0] {
+export const articleQuery = defineQuery(`
+  *[_type == "article" && language == $lang && slug[$lang].current == $slug][0] {
+    ...,
     _id,
-    title,
-    description,
-    // ...other fields
+    _type,
+    author->{ _id, _type, name }
   }
 `)
 ```
 
-`defineQuery` itself must still be imported from `'groq'` as shown above. The query file lives in
-`shared/utils/`, so its export (`homeQuery`) is available to both server and composable files
-without a relative import path — but `defineQuery` is not auto-imported.
+## 2. Add the published endpoint
 
----
-
-## Step 2 — Cached Nitro endpoint (`server/api/sanity/<type>.get.ts`)
-
-Use `defineCachedEventHandler` to cache the Sanity response in Nitro storage and set a
-`Cache-Control` header so Netlify CDN caches the response for 24 h with SWR.
+Use the shared validators and cache helpers. Keep all failure responses no-store and cache only a
+successful published result.
 
 ```ts
-// server/api/sanity/home.get.ts
-import type { HomeQueryResult } from '#sanity-types'
+// server/api/sanity/article.get.ts
+import type { ArticleQueryResult } from '#sanity-types'
 
-const browserMaxAge = 3600   // browser-fresh window (1 hour)
-const cdnMaxAge = 86400      // CDN + SWR (24 hours)
+export default defineEventHandler(async (event) => {
+  setNoStore(event)
+  const lang = getSanityLocale(event)
+  const slug = getSanitySlug(event)
+  const sanity = useSanity()
+  let article: ArticleQueryResult
 
-/**
- * GET /api/sanity/home
- *
- * Returns home page data from Sanity CMS.
- * Served from Nitro in-memory cache; CDN adds s-maxage=86400.
- *
- * @query lang - BCP-47 locale code (default: 'en')
- * @throws 400 if required params are missing
- * @cache max-age=3600 (browser), s-maxage=86400 (CDN)
- */
-export default defineCachedEventHandler(
-  async (event) => {
-    const { lang = 'en' } = getQuery<{ lang?: string }>(event)
-
-    setHeader(
-      event,
-      'Cache-Control',
-      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
+  try {
+    article = await sanity.fetch<ArticleQueryResult>(
+      articleQuery,
+      { lang, slug },
+      { stega: false },
     )
-
-    const sanity = useSanity()
-    return sanity.fetch<HomeQueryResult>(homeQuery, { lang }, { stega: false })
-  },
-  {
-    ...sanityCacheOpts,
-    maxAge: cdnMaxAge,
-    getKey: (event) => {
-      const { lang = 'en' } = getQuery<{ lang?: string }>(event)
-      return `home:${lang}`
-    },
   }
-)
+  catch (error) {
+    console.error('Failed to fetch the Sanity article document', error)
+    throw createError({ statusCode: 502, statusMessage: 'Failed to fetch from Sanity' })
+  }
+
+  if (!article)
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+
+  setPublicCdnCache(event, [
+    article._id,
+    article._type,
+    article.author?._id,
+    article.author?._type,
+  ].filter((tag): tag is string => Boolean(tag)))
+
+  return article
+})
 ```
 
-Cache key pattern: `<type>:<lang>` (or `<type>:<lang>:<slug>` for slug-parameterised types).
-Always pass `{ stega: false }` to `sanity.fetch()` — prevents stega encoding from leaking into
-cached responses. `...sanityCacheOpts` (from `server/utils/sanityCache.ts`) pins the cache
-storage key so the webhook handler can purge it later — see `core-server-routes.md` (Cached
-Sanity endpoint conventions) for the full template and `perf-cdn-caching.md` for why this matters.
+Do not wrap the endpoint in `defineCachedEventHandler`. If a listing result has no single root
+document, tag it with the listed document IDs and the relevant listing type.
 
----
+## 3. Add the preview-switch composable
 
-## Step 3 — Preview-switch composable (`app/composables/useSanity<Type>.ts`)
+Accept a reactive page parameter object, expose it to `useSanityQuery` through reactive getters, and
+return the full async-data result from both branches.
 
 ```ts
-// app/composables/useSanityHome.ts
-import type { HomeQueryResult } from '#sanity-types'
+// app/composables/useSanityArticle.ts
+import type { MaybeRef } from 'vue'
+import type { ArticleQueryResult } from '#sanity-types'
+import { reactive, toValue } from 'vue'
 
-export const useSanityHome = (params: { lang: string }) => {
+export function useSanityArticle(params: MaybeRef<Required<SanityQueryParams>>) {
   const visualEditingState = useSanityVisualEditingState()
-  const isPreview = computed(() => Boolean(visualEditingState?.enabled))
+  const previewParams = reactive({
+    get lang() {
+      return toValue(params).lang
+    },
+    get slug() {
+      return toValue(params).slug
+    },
+  })
 
-  if (isPreview.value) {
-    // Preview: live draft data with stega encoding for overlay clicks
-    return useSanityQuery<HomeQueryResult>(homeQuery, params)
-  }
+  if (Boolean(visualEditingState?.enabled))
+    return useSanityQuery<ArticleQueryResult>(articleQuery, previewParams)
 
-  // Production: cached Nitro endpoint → CDN-backed response, stega disabled
-  return useFetch<HomeQueryResult>('/api/sanity/home', { query: params })
+  return useFetch<ArticleQueryResult>('/api/sanity/article', {
+    query: () => toValue(params),
+  })
 }
 ```
 
-→ See `core-composables.md` (Preview-switch section) for the full pattern explanation.
+## 4. Add the page
 
----
-
-## Step 4 — Route page (`app/pages/*.vue`)
-
-Await the composable, null-guard before rendering, and tag the page with the document `_id` for
-surgical CDN cache invalidation. `useCacheTag` ties the CDN page cache to the document `_id` so
-the Sanity webhook can purge only the affected pages without clearing unrelated entries.
+Use computed route/locale parameters. Convert missing content and fetch failures into no-store page
+errors before assigning cache tags.
 
 ```vue
-<!-- app/pages/index.vue -->
-<script setup lang="ts">
-const { locale } = useI18n()
-const { data } = await useSanityHome({ lang: locale.value })
-
-if (data.value) {
-  useCacheTag(data.value._id)
-}
-</script>
-
-<template>
-  <pre>{{ data }}</pre>
-</template>
-```
-
-> **Placeholder pages**: `index.vue` and `[slug].vue` ship as `<pre>{{ data }}</pre>`. The
-> data-fetching is fully wired — only the template needs to be replaced with real markup.
-
----
-
-## Slug-parameterised variant (`page` type)
-
-For document types with a slug, adjust the cache key and read `route.params.slug` in the page.
-
-**Step 1** — add `$slug` to the query:
-
-```ts
-// shared/utils/pageQuery.ts
-export const pageQuery = defineQuery(`
-  *[_type == "page" && language == $lang && slug.current == $slug][0] {
-    _id,
-    title,
-    // ...
-  }
-`)
-```
-
-**Step 2** — cache key includes slug:
-
-```ts
-// server/api/sanity/page.get.ts
-const browserMaxAge = 3600
-const cdnMaxAge = 86400
-
-export default defineCachedEventHandler(
-  async (event) => {
-    const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
-
-    setHeader(
-      event,
-      'Cache-Control',
-      `public, max-age=${browserMaxAge}, s-maxage=${cdnMaxAge}, stale-while-revalidate=${cdnMaxAge}`
-    )
-
-    const sanity = useSanity()
-    return sanity.fetch<PageQueryResult>(pageQuery, { lang, slug }, { stega: false })
-  },
-  {
-    ...sanityCacheOpts,
-    maxAge: cdnMaxAge,
-    getKey: (event) => {
-      const { lang = 'en', slug = '' } = getQuery<{ lang?: string; slug?: string }>(event)
-      return `page:${lang}:${slug}`
-    },
-  }
-)
-```
-
-**Step 3** — composable passes slug:
-
-```ts
-// app/composables/useSanityPage.ts
-export const useSanityPage = (params: { lang: string; slug: string }) => {
-  const visualEditingState = useSanityVisualEditingState()
-  const isPreview = computed(() => Boolean(visualEditingState?.enabled))
-
-  if (isPreview.value) {
-    return useSanityQuery<PageQueryResult>(pageQuery, params)
-  }
-
-  return useFetch<PageQueryResult>('/api/sanity/page', { query: params })
-}
-```
-
-**Step 4** — page reads slug from route params:
-
-```vue
-<!-- app/pages/[slug].vue -->
 <script setup lang="ts">
 const route = useRoute()
 const { locale } = useI18n()
-const { data } = await useSanityPage({ lang: locale.value, slug: route.params.slug as string })
+const params = computed(() => ({
+  lang: locale.value,
+  slug: route.params.slug as string,
+}))
 
-if (data.value) {
-  useCacheTag(data.value._id)
+const { data: article, error } = await useSanityArticle(params)
+
+if (error.value || !article.value) {
+  useNoStore()
+  const statusCode = error.value && typeof error.value === 'object'
+    && 'statusCode' in error.value
+    ? Number(error.value.statusCode)
+    : 404
+
+  throw createError({
+    statusCode,
+    statusMessage: statusCode === 404 ? 'Article not found' : 'Failed to load article',
+  })
 }
+
+useCacheTag([
+  article.value._id,
+  article.value._type,
+  article.value.author?._id,
+  article.value.author?._type,
+].filter((tag): tag is string => Boolean(tag)))
 </script>
-
-<template>
-  <pre>{{ data }}</pre>
-</template>
 ```
 
----
+The page and endpoint must calculate the same dependency tags. Extract a shared pure tag builder
+when the list is non-trivial so the two call sites cannot drift.
 
-## Step 5 — Register the new type's cache keys in the webhook handler
+## 5. Verify webhook coverage
 
-**This step is easy to skip and breaks cache invalidation silently if you do.** Add the new
-type's cache key(s) to the `resolveNitroCacheKeys` switch in `server/api/cache/revalidate.ts`
-(see `perf-cdn-caching.md`):
+The base webhook purges the changed `_id` and `_type`; no per-document-type switch is needed. Ensure
+the Sanity webhook:
 
-```ts
-// server/api/cache/revalidate.ts
-function resolveNitroCacheKeys(body: RevalidateBody): string[] {
-  const { _type, slug } = body
-  switch (_type) {
-    case 'home':
-      return SUPPORTED_LOCALES.map(lang => `home:${lang}`)
-    case 'page':
-      return slug ? SUPPORTED_LOCALES.map(lang => `page:${lang}:${slug}`) : []
-    // + one case per new type, mirroring its getKey format from Step 2
-    default:
-      return []
-  }
-}
-```
+- uses POST and the signed secret configured by `NUXT_SANITY_WEBHOOK_SECRET`;
+- triggers on create, update, and delete/unpublish for published documents;
+- does not trigger for drafts or release versions unless intentionally required;
+- projects `{ _id, _type }`;
+- targets `/api/cache/revalidate`.
 
-If the new type is slug-parameterised, also extend the Sanity webhook's GROQ projection (in the
-Sanity manage dashboard, outside this repo) to include the slug field, e.g.
-`{ _id, _type, "slug": slug.current }`. Without this step, the type's `defineCachedEventHandler`
-endpoint keeps serving stale data for up to `cdnMaxAge` after every publish, even though the
-webhook itself reports success.
+Reference changes work because responses that render the reference carry its ID/type tags. If the
+query cannot expose precise dependency IDs, a broader type tag is an acceptable fallback, but it
+purges more pages and should be documented as such.
 
-## Step 6 — Update architecture documentation
+## 6. Verify behavior
 
-After wiring the route, update the route table in your architecture documentation
-(e.g. a `nuxt-sanity.md` or equivalent) with:
+1. Request the endpoint twice and confirm the second production response is a Netlify cache hit.
+2. Confirm invalid locale/slug, missing content, and upstream failures return no-store.
+3. Enter Presentation and confirm draft changes update without caching preview HTML or JSON.
+4. Publish the root document and confirm both page HTML and JSON are purged.
+5. Publish a rendered reference and confirm the dependent page is also purged.
+6. Delete/unpublish the root document and confirm the next request returns an uncached 404.
 
-- The new endpoint path (`/api/sanity/<type>`)
-- Query params (`lang`, `slug`, etc.)
-- TTL values (`browserMaxAge` / `cdnMaxAge`)
-- Cache key format (e.g. `<type>:lang:slug`)
-- The `resolveNitroCacheKeys` entry added in Step 5
-
-This keeps the architecture doc accurate as the API surface grows.
+Update the project architecture documentation with the endpoint, parameters, tags, and any choice to
+use the live Sanity API instead of the API CDN.
