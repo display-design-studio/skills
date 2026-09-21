@@ -73,7 +73,7 @@
 ### Vendored from `JuliusBrussee/skills`
 
 - `caveman`
-- `fuck-slop`
+- `deslopify`
 - `grill-me`
 - `junior-to-senior`
 
@@ -131,7 +131,7 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `sanity-io/agent-toolkit`: `sanity-best-practices`, `content-modeling-best-practices`, `seo-aeo-best-practices`, `content-experimentation-best-practices`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: see the command above
-- `JuliusBrussee/skills`: `caveman`, `fuck-slop`, `grill-me`, `junior-to-senior`
+- `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 
