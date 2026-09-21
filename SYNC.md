@@ -81,10 +81,10 @@ cp -R vendor/shopify-ai-toolkit/skills/shopify-storefront-graphql skills/shopify
 cp -R vendor/shopify-ai-toolkit/skills/shopify-use-shopify-cli skills/shopify-use-shopify-cli
 cp -R vendor/shopify-ai-toolkit/skills/ucp skills/ucp
 
-rm -rf skills/caveman skills/fuck-slop skills/grill-me skills/junior-to-senior
+rm -rf skills/caveman skills/deslopify skills/grill-me skills/junior-to-senior
 
 cp -R vendor/julius-skills/skills/caveman skills/caveman
-cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
+cp -R vendor/julius-skills/skills/deslopify skills/deslopify
 cp -R vendor/julius-skills/skills/grill-me skills/grill-me
 cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
 
@@ -118,4 +118,4 @@ git diff
 - For first-party skills, use `metadata.author: display studio`.
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
-- `skills/caveman`, `skills/fuck-slop`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
+- `skills/caveman`, `skills/deslopify`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
