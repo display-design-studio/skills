@@ -54,5 +54,23 @@
       "ask-sonner",
       "write-swift"
     ]
+  },
+  "shopify": {
+    "mode": "copy",
+    "vendor": "shopify-ai-toolkit",
+    "skills": [
+      "shopify",
+      "ucp"
+    ],
+    "stripFrontmatter": [
+      "hooks",
+      "requires_bin",
+      "command"
+    ],
+    "remove": [
+      "scripts/track-telemetry.sh",
+      "scripts/track-telemetry.ps1"
+    ],
+    "disableTelemetry": true
   }
 }

@@ -9,6 +9,12 @@
 // Per upstream skill <vendor>/skills/<name>/:
 //   SKILL.md          -> skills/<group>/references/<short>.md   (frontmatter stripped)
 //   other files/dirs  -> skills/<group>/references/<short>/...
+// mode "copy" (a skill that upstream already ships as one unit, e.g. Shopify): copies skills/<name> as is, then
+//   stripFrontmatter  removes top-level frontmatter keys (and their indented children) that skills-ref rejects
+//   remove            deletes files (telemetry hook scripts)
+//   disableTelemetry  prepends OPT_OUT_INSTRUMENTATION=true to every scripts/*.mjs, so telemetry is off
+//                     regardless of the user's environment (documented opt-out of the upstream scripts)
+//
 // Relative paths a skill body uses for its own files (references/x.md, RECIPES.md) are rewritten to
 // <short>/<path>; mentions of other mapped skills with a hyphen in the name become links.
 // The router skills/<group>/SKILL.md is first-party: only the block between
@@ -139,6 +145,50 @@ function compact(group, cfg, skillsDir) {
   warnBrokenLinks(group, groupDir)
 }
 
+function stripFrontmatterKeys(text, keys) {
+  const m = text.match(/^---\n([\s\S]*?)\n---\n/)
+  if (!m) throw new Error('missing frontmatter')
+  const out = []
+  let skipping = false
+  for (const line of m[1].split('\n')) {
+    const key = line.match(/^([A-Za-z_-]+):/)?.[1]
+    if (key) skipping = keys.includes(key)
+    else if (!/^\s/.test(line) && line !== '') skipping = false
+    if (!skipping) out.push(line)
+  }
+  return `---\n${out.join('\n')}\n---\n${text.slice(m[0].length)}`
+}
+
+const OPT_OUT_LINE = "process.env.OPT_OUT_INSTRUMENTATION = 'true' // display studio: upstream telemetry disabled"
+
+function disableTelemetry(scriptsDir) {
+  if (!existsSync(scriptsDir)) return
+  for (const f of readdirSync(scriptsDir)) {
+    if (!f.endsWith('.mjs')) continue
+    const p = join(scriptsDir, f)
+    const text = readFileSync(p, 'utf8')
+    const nl = text.startsWith('#!') ? text.indexOf('\n') + 1 : 0
+    writeFileSync(p, `${text.slice(0, nl)}${OPT_OUT_LINE}\n${text.slice(nl)}`)
+  }
+}
+
+function copySkills(group, cfg, skillsDir) {
+  for (const name of cfg.skills) {
+    const src = join(ROOT, 'vendor', cfg.vendor, 'skills', name)
+    if (!existsSync(join(src, 'SKILL.md'))) throw new Error(`missing upstream skill: ${src}`)
+    const dest = join(skillsDir, name)
+    rmSync(dest, { recursive: true, force: true })
+    cpSync(src, dest, { recursive: true })
+    for (const f of cfg.remove ?? []) rmSync(join(dest, f), { force: true })
+    if (cfg.stripFrontmatter?.length) {
+      const sk = join(dest, 'SKILL.md')
+      writeFileSync(sk, stripFrontmatterKeys(readFileSync(sk, 'utf8'), cfg.stripFrontmatter))
+    }
+    if (cfg.disableTelemetry) disableTelemetry(join(dest, 'scripts'))
+  }
+  warnUnlisted(cfg, group)
+}
+
 const args = process.argv.slice(2)
 if (args.includes('--vendors')) {
   console.log([...new Set(Object.values(MAP).map((c) => `vendor/${c.vendor}`))].join(' '))
@@ -150,20 +200,29 @@ const groups = Object.entries(MAP).filter(([g]) => only.length === 0 || only.inc
 if (groups.length === 0) throw new Error(`unknown group: ${only.join(', ')}`)
 
 if (!check) {
-  for (const [g, cfg] of groups) compact(g, cfg, join(ROOT, 'skills'))
+  for (const [g, cfg] of groups) (cfg.mode === 'copy' ? copySkills : compact)(g, cfg, join(ROOT, 'skills'))
   console.log(`compacted: ${groups.map(([g]) => g).join(', ')}`)
 } else {
   const tmp = mkdtempSync(join(tmpdir(), 'compact-'))
   let failed = false
   for (const [g, cfg] of groups) {
-    // first-party files (router, rules/) are inputs; references/ is the generated output
-    cpSync(join(ROOT, 'skills', g), join(tmp, g), { recursive: true })
-    compact(g, cfg, tmp)
-    try {
-      execFileSync('diff', ['-r', join(tmp, g), join(ROOT, 'skills', g)], { stdio: 'inherit' })
-    } catch {
-      failed = true
-      console.error(`DRIFT in skills/${g}: run \`node scripts/sync-vendored.mjs ${g}\``)
+    const pairs = []
+    if (cfg.mode === 'copy') {
+      copySkills(g, cfg, tmp)
+      for (const name of cfg.skills) pairs.push([join(tmp, name), join(ROOT, 'skills', name)])
+    } else {
+      // first-party files (router, rules/) are inputs; references/ is the generated output
+      cpSync(join(ROOT, 'skills', g), join(tmp, g), { recursive: true })
+      compact(g, cfg, tmp)
+      pairs.push([join(tmp, g), join(ROOT, 'skills', g)])
+    }
+    for (const [a, b] of pairs) {
+      try {
+        execFileSync('diff', ['-r', a, b], { stdio: 'inherit' })
+      } catch {
+        failed = true
+        console.error(`DRIFT in ${b.slice(ROOT.length + 1)}: run \`node scripts/sync-vendored.mjs ${g}\``)
+      }
     }
   }
   rmSync(tmp, { recursive: true, force: true })

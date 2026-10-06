@@ -47,26 +47,7 @@ Compacted into `skills/sanity` (MIT): `sanity-best-practices`, `content-modeling
 
 ### Vendored from `Shopify/Shopify-AI-Toolkit`
 
-- `shopify-admin`
-- `shopify-app-store-review`
-- `shopify-custom-data`
-- `shopify-customer`
-- `shopify-dev`
-- `shopify-functions`
-- `shopify-hydrogen`
-- `shopify-liquid`
-- `shopify-onboarding-dev`
-- `shopify-onboarding-merchant`
-- `shopify-partner`
-- `shopify-payments-apps`
-- `shopify-polaris-admin-extensions`
-- `shopify-polaris-app-home`
-- `shopify-polaris-checkout-extensions`
-- `shopify-polaris-customer-account-extensions`
-- `shopify-pos-ui`
-- `shopify-shopifyql`
-- `shopify-storefront-graphql`
-- `shopify-use-shopify-cli`
+- `shopify`: one skill for every Shopify developer surface (Admin, Storefront, Functions, Polaris, Hydrogen, Liquid, CLI, ...). Upstream's single skill replaces the former `shopify-*` skills. Upstream telemetry is disabled in the vendored scripts.
 - `ucp`
 
 ### Vendored from `JuliusBrussee/skills`
@@ -118,14 +99,7 @@ The `--skill` flag only accepts exact skill names (repeatable) or `'*'` for the 
 
 ```bash
 npx skills add display-design-studio/skills \
-  --skill shopify-admin --skill shopify-app-store-review --skill shopify-custom-data \
-  --skill shopify-customer --skill shopify-dev --skill shopify-functions \
-  --skill shopify-hydrogen --skill shopify-liquid --skill shopify-onboarding-dev \
-  --skill shopify-onboarding-merchant --skill shopify-partner --skill shopify-payments-apps \
-  --skill shopify-polaris-admin-extensions --skill shopify-polaris-app-home \
-  --skill shopify-polaris-checkout-extensions --skill shopify-polaris-customer-account-extensions \
-  --skill shopify-pos-ui --skill shopify-shopifyql --skill shopify-storefront-graphql \
-  --skill shopify-use-shopify-cli --skill ucp
+  --skill shopify --skill ucp
 ```
 
 Use the vendor lists in [Included skills](#included-skills) above to get the exact names for other vendors:
@@ -133,7 +107,7 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `antfu/skills`: `nuxt`, `vue`, `vite`
 - `sanity-io/agent-toolkit`: compacted into `sanity`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
-- `Shopify/Shopify-AI-Toolkit`: see the command above
+- `Shopify/Shopify-AI-Toolkit`: `shopify`, `ucp`
 - `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
 - `emilkowalski/skills`: compacted into `animation`
 
