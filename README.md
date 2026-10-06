@@ -21,7 +21,7 @@
 
 ### First-party (Display Studio)
 
-- `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
+- `gsap`: one skill for all GSAP topics (core, timeline, ScrollTrigger, plugins, React, frameworks, utils, performance, debug). Router + `references/` generated from `greensock/gsap-skills` (MIT) with display studio additions. Replaces the former `gsap-*` skills: install with `--skill gsap`.
 - `animation/motion-conventions`: performant, refined web animation conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup) with Nuxt and vanilla JS adapters; pairs with the vendored Emil Kowalski animation skills and `gsap-*`.
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.

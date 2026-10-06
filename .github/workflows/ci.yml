@@ -18,6 +18,11 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Check compacted skills are in sync with vendors
+        run: |
+          git submodule update --init vendor/gsap-skills
+          node scripts/sync-vendored.mjs --check
+
       - name: Validate all skills
         run: |
           # skills live at skills/<name>/ or in a group folder skills/<group>/<name>/

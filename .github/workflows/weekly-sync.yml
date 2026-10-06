@@ -83,6 +83,9 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Re-compact vendored skills (greensock/gsap-skills)
+        run: node scripts/sync-vendored.mjs
+
       - name: Validate updated skills
         run: |
           # skills live at skills/<name>/ or in a group folder skills/<group>/<name>/

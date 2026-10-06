@@ -4,7 +4,7 @@ description: >-
   display studio conventions for performant, refined web animation: scroll-reveal presets (GSAP + ScrollTrigger),
   Lenis smooth scroll driven by the GSAP ticker, page transitions, reduced-motion handling and cleanup, with a
   Nuxt adapter (v-reveal directive + composable) and a vanilla JS adapter (data-reveal + initReveal). Defers taste,
-  easing/duration budgets and review to the Emil Kowalski skills, and the GSAP API to the gsap-* skills.
+  easing/duration budgets and review to the Emil Kowalski skills, and the GSAP API to the gsap skill.
   Use when the user asks to add or standardise scroll animations, reveal on scroll, smooth scrolling, page
   transitions, or to make animations subtle/performant/"premium" in a Nuxt or vanilla project.
   Keywords: scroll reveal, v-reveal, useScrollReveal, data-reveal, GSAP, ScrollTrigger, Lenis, smooth scroll,
@@ -42,10 +42,10 @@ Distilled from the Ryoma frontend (`ryoma-frontend`, `docs/`), generalised so it
 | Audit a codebase / find places worth animating | `improve-animations`, `find-animation-opportunities` |
 | Name an effect precisely | `animation-vocabulary` |
 | Gestures, velocity, momentum | `apple-design` |
-| GSAP API, timelines, ScrollTrigger, React/frameworks | `gsap-core`, `gsap-timeline`, `gsap-scrolltrigger`, `gsap-react`, `gsap-frameworks`, `gsap-performance` |
+| GSAP API, timelines, ScrollTrigger, React/frameworks, performance | `gsap` (see its `references/`) |
 
 Rule of thumb: this skill answers "what are *our* defaults and how do we wire them"; the Emil skills answer
-"does this feel right"; the `gsap-*` skills answer "how does the API work".
+"does this feel right"; the `gsap` skill answers "how does the API work".
 
 ## Source attribution
 
