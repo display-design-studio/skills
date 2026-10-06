@@ -17,7 +17,7 @@ metadata:
 
 One entry point for every GSAP topic. The topic guides live in `references/`; read the one that fits before writing code.
 
-For our defaults (scroll-reveal presets, Lenis, page transitions, reduced motion) use `motion-conventions` first. It builds on the topics below.
+For our defaults (scroll-reveal presets, Lenis, page transitions, reduced motion) use the `animation` skill first. It builds on the topics below.
 
 ## How to use
 

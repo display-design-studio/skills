@@ -62,7 +62,7 @@ Covered by `perf-cdn-caching.md`, `perf-query-keys-and-caching.md`, and
 
 ## Maintenance boundaries
 
-- Keep generic GROQ optimization and schema design in `sanity-best-practices`.
+- Keep generic GROQ optimization and schema design in `sanity`.
 - Keep generic Nuxt rendering guidance in the `nuxt` skill.
 - Recheck module source when `@nuxtjs/sanity` changes preview, typegen, query-key, or proxy behavior.
 - Recheck Netlify documentation when cache headers, ISR, variation, cache tags, or `purgeCache` change.

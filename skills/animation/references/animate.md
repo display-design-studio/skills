@@ -1,8 +1,3 @@
----
-name: animate
-description: Build an animation from scratch, making the decisions in the order that determines whether it feels right — should it animate at all, what purpose, which tool, which properties, which curve and duration, how it interrupts, how it exits. Writes the implementation. Use when asked to animate something, add motion, make a component feel alive, or build a transition. For critiquing existing motion use review-animations; for auditing a whole codebase use improve-animations.
----
-
 # Building Animations
 
 ## Initial Response
@@ -13,11 +8,11 @@ When this skill is first invoked without a specific question, respond only with:
 
 Do not provide any other information until the user asks a question.
 
-A construction skill. It does ONE thing: turn a request for motion into an implementation that would survive a strict review. It does not audit a codebase (that's `improve-animations`), critique a diff (that's `review-animations`), hunt for places that could animate (that's `find-animation-opportunities`), or build for React Native (that's `animate-expo`).
+A construction skill. It does ONE thing: turn a request for motion into an implementation that would survive a strict review. It does not audit a codebase (that's [improve-animations](improve-animations.md)), critique a diff (that's [review-animations](review-animations.md)), hunt for places that could animate (that's [find-animation-opportunities](find-animation-opportunities.md)), or build for React Native (that's `animate-expo`).
 
 ## Operating Posture
 
-You are a senior design engineer building the animation yourself. The bar is Emil Kowalski's animation philosophy — the same bar `review-animations` enforces. Write it so it passes that review the first time.
+You are a senior design engineer building the animation yourself. The bar is Emil Kowalski's animation philosophy — the same bar [review-animations](review-animations.md) enforces. Write it so it passes that review the first time.
 
 Two failure modes, and the first is worse:
 
@@ -82,7 +77,7 @@ If the task needs a *component* rather than an animation — a toast, a drawer, 
 
 ### 4. Pick the properties
 
-- **`transform` and `opacity` only.** They skip layout and paint and run on the GPU. `width`/`height`/`margin`/`padding`/`top`/`left` trigger all three. (`clip-path` is the sanctioned fourth — see RECIPES.md. `height` is tolerated only for accordions, where there's no transform equivalent.)
+- **`transform` and `opacity` only.** They skip layout and paint and run on the GPU. `width`/`height`/`margin`/`padding`/`top`/`left` trigger all three. (`clip-path` is the sanctioned fourth — see animate/RECIPES.md. `height` is tolerated only for accordions, where there's no transform equivalent.)
 - **Never `scale(0)`.** Start from `scale(0.9–0.97)` + `opacity: 0`. Nothing in the real world appears from nothing.
 - **`transform-origin` at the trigger** for popovers, dropdowns, menus, tooltips — `var(--transform-origin)` in Base UI. **Modals are exempt**; they're not anchored to a trigger, so they stay centered.
 - **Percentages in `translate()`** are relative to the element's own size — `translateY(100%)` moves by its own height whatever the content. Prefer over hardcoded pixels.
@@ -170,11 +165,11 @@ Reduced motion means **fewer and gentler** animations, not zero — keep transit
 
 ## Recipes
 
-For ready-to-build implementations of the common cases — button press, dropdown, tooltip, modal, drawer, toast, accordion, stagger, hold-to-confirm, tab indicator, scroll reveal, drag-to-dismiss — see [RECIPES.md](RECIPES.md). Load it whenever the request matches one of those components; start from the recipe rather than from a blank file.
+For ready-to-build implementations of the common cases — button press, dropdown, tooltip, modal, drawer, toast, accordion, stagger, hold-to-confirm, tab indicator, scroll reveal, drag-to-dismiss — see [animate/RECIPES.md](animate/RECIPES.md). Load it whenever the request matches one of those components; start from the recipe rather than from a blank file.
 
 ## Never Ship
 
-Self-check before you finish. Each of these is an automatic block in `review-animations`:
+Self-check before you finish. Each of these is an automatic block in [review-animations](review-animations.md):
 
 | Never | Instead |
 | --- | --- |

@@ -14,7 +14,7 @@
 - One directory per skill: `skills/<skill-name>/`
 - Skill entrypoint: `skills/<skill-name>/SKILL.md`
 - Modular rules: `skills/<skill-name>/rules/*.md`
-- Thematic groups are allowed as `skills/<group>/<skill>/SKILL.md` (e.g. `skills/animation/`); each skill keeps its own `name` and installs on its own
+- One skill per domain where it helps: router `SKILL.md` + `references/` (generated from vendors by `scripts/sync-vendored.mjs`) + optional first-party `rules/` (`gsap`, `sanity`, `animation`)
 - Upstream vendors tracked as submodules under `vendor/`
 
 ## Included skills
@@ -22,7 +22,7 @@
 ### First-party (Display Studio)
 
 - `gsap`: one skill for all GSAP topics (core, timeline, ScrollTrigger, plugins, React, frameworks, utils, performance, debug). Router + `references/` generated from `greensock/gsap-skills` (MIT) with display studio additions. Replaces the former `gsap-*` skills: install with `--skill gsap`.
-- `animation/motion-conventions`: performant, refined web animation conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup) with Nuxt and vanilla JS adapters; pairs with the vendored Emil Kowalski animation skills and `gsap-*`.
+- `animation`: web animation in one skill. First-party conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup, Nuxt and vanilla adapters) in `rules/`, plus Emil Kowalski's guides (when/how to animate, easing, review, audit, gestures) in `references/`. Replaces `motion-conventions` and the `emil-*` skills: install with `--skill animation`.
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
 - `ruby`: core Ruby language best practices (independent of any framework) covering syntax and types, collections/Enumerable, blocks/procs/lambdas, OOP and modules, metaprogramming, Bundler/gems, testing (RSpec/Minitest), and style/typing tooling (RuboCop, RBS, Steep, ruby-lsp).
@@ -39,10 +39,7 @@
 
 ### Vendored from `sanity-io/agent-toolkit`
 
-- `sanity-best-practices`
-- `content-modeling-best-practices`
-- `seo-aeo-best-practices`
-- `content-experimentation-best-practices`
+Compacted into `skills/sanity` (MIT): `sanity-best-practices`, `content-modeling-best-practices`, `seo-aeo-best-practices`, `content-experimentation-best-practices` as `references/` topics. Install with `--skill sanity`.
 
 ### Vendored from `vercel-labs/agent-skills`
 
@@ -81,15 +78,7 @@
 
 ### Vendored from `emilkowalski/skills`
 
-MIT licensed, © Emil Kowalski. Web animation subset only. Lives in `skills/animation/` (see its [README](skills/animation/README.md)).
-
-- `emil-design-eng`
-- `animate`
-- `review-animations`
-- `improve-animations`
-- `find-animation-opportunities`
-- `animation-vocabulary`
-- `apple-design`
+MIT licensed, © Emil Kowalski. Web animation subset, compacted into `skills/animation` (`references/`): `emil-design-eng`, `animate`, `review-animations`, `improve-animations`, `find-animation-opportunities`, `animation-vocabulary`, `apple-design`.
 
 ### Vendored from `dietrichgebert/ponytail`
 
@@ -108,7 +97,7 @@ Install a specific first-party or vendored skill:
 ```bash
 npx skills add <owner>/<repo> --skill nuxt-sanity
 npx skills add <owner>/<repo> --skill nuxt
-npx skills add <owner>/<repo> --skill sanity-best-practices
+npx skills add <owner>/<repo> --skill sanity
 ```
 
 Install all skills from this repository:
@@ -142,11 +131,11 @@ npx skills add display-design-studio/skills \
 Use the vendor lists in [Included skills](#included-skills) above to get the exact names for other vendors:
 
 - `antfu/skills`: `nuxt`, `vue`, `vite`
-- `sanity-io/agent-toolkit`: `sanity-best-practices`, `content-modeling-best-practices`, `seo-aeo-best-practices`, `content-experimentation-best-practices`
+- `sanity-io/agent-toolkit`: compacted into `sanity`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: see the command above
 - `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
-- `emilkowalski/skills`: `emil-design-eng`, `animate`, `review-animations`, `improve-animations`, `find-animation-opportunities`, `animation-vocabulary`, `apple-design`
+- `emilkowalski/skills`: compacted into `animation`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 

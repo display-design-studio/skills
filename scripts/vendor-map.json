@@ -17,5 +17,42 @@
       "gsap-core": "scripts/patches/gsap-core.md",
       "gsap-utils": "scripts/patches/gsap-utils.md"
     }
+  },
+  "sanity": {
+    "mode": "compact",
+    "vendor": "sanity-agent-toolkit",
+    "skills": [
+      "sanity-best-practices",
+      "content-modeling-best-practices",
+      "seo-aeo-best-practices",
+      "content-experimentation-best-practices"
+    ],
+    "ignore": [
+      "portable-text-conversion",
+      "portable-text-serialization",
+      "sanity-migration"
+    ]
+  },
+  "animation": {
+    "mode": "compact",
+    "vendor": "emil-skills",
+    "skills": [
+      "emil-design-eng",
+      "animate",
+      "review-animations",
+      "improve-animations",
+      "find-animation-opportunities",
+      "animation-vocabulary",
+      "apple-design"
+    ],
+    "ignore": [
+      "animate-expo",
+      "mobile-native",
+      "break-ui",
+      "pick-ui-library",
+      "prototype",
+      "ask-sonner",
+      "write-swift"
+    ]
   }
 }

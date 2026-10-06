@@ -18,7 +18,7 @@ Best-practices guide for the `@nuxtjs/sanity` module (Nuxt 3 and 4). Covers modu
 setup, composables, SSR data fetching, image handling, Portable Text, visual
 editing, TypeScript, and Nitro server routes.
 
-> Also load the `nuxt` skill for Nuxt core patterns and `sanity-best-practices`
+> Also load the `nuxt` skill for Nuxt core patterns and `sanity`
 > for GROQ query optimization and schema design. This skill covers the
 > integration layer only.
 

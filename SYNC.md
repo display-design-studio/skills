@@ -25,19 +25,11 @@ git submodule update --remote --init --recursive
 
 ```bash
 rm -rf skills/nuxt skills/vue skills/vite
-rm -rf skills/sanity-best-practices
-rm -rf skills/content-modeling-best-practices
-rm -rf skills/seo-aeo-best-practices
-rm -rf skills/content-experimentation-best-practices
 
 cp -R vendor/antfu-skills/skills/nuxt skills/nuxt
 cp -R vendor/antfu-skills/skills/vue skills/vue
 cp -R vendor/antfu-skills/skills/vite skills/vite
 
-cp -R vendor/sanity-agent-toolkit/skills/sanity-best-practices skills/sanity-best-practices
-cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
-cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
-cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
 
 rm -rf skills/web-design-guidelines
 cp -R vendor/vercel-agent-skills/skills/web-design-guidelines skills/web-design-guidelines
@@ -82,19 +74,6 @@ rm -rf skills/ponytail
 
 cp -R vendor/ponytail-skills/skills/ponytail skills/ponytail
 
-rm -rf skills/animation/emil-design-eng skills/animation/animate skills/animation/review-animations skills/animation/improve-animations skills/animation/find-animation-opportunities skills/animation/animation-vocabulary skills/animation/apple-design
-mkdir -p skills/animation
-
-cp -R vendor/emil-skills/skills/emil-design-eng skills/animation/emil-design-eng
-cp -R vendor/emil-skills/skills/animate skills/animation/animate
-cp -R vendor/emil-skills/skills/review-animations skills/animation/review-animations
-cp -R vendor/emil-skills/skills/improve-animations skills/animation/improve-animations
-cp -R vendor/emil-skills/skills/find-animation-opportunities skills/animation/find-animation-opportunities
-cp -R vendor/emil-skills/skills/animation-vocabulary skills/animation/animation-vocabulary
-cp -R vendor/emil-skills/skills/apple-design skills/animation/apple-design
-
-# skills-ref rejects this upstream-only field
-sed -i.bak '/^disable-model-invocation:/d' skills/animation/review-animations/SKILL.md && rm skills/animation/review-animations/SKILL.md.bak
 ```
 
 ### Compacted skills (one skill per domain)
@@ -106,7 +85,7 @@ node scripts/sync-vendored.mjs          # regenerate all groups
 node scripts/sync-vendored.mjs --check  # fail if skills/<group> drifts from vendor + patches
 ```
 
-Currently compacted: `gsap` (from `vendor/gsap-skills`). Display studio additions live in `scripts/patches/` and are re-applied automatically (`## Debug` in `references/core.md`, `## Helper Functions` in `references/utils.md`). Never edit `references/` by hand.
+Currently compacted: `gsap` (from `vendor/gsap-skills`), `sanity` (from `vendor/sanity-agent-toolkit`: sanity-best-practices, content-modeling, seo-aeo, content-experimentation) and `animation` (from `vendor/emil-skills`, next to our first-party `rules/`). Display studio additions live in `scripts/patches/` and are re-applied automatically (`## Debug` in `references/core.md`, `## Helper Functions` in `references/utils.md`). Never edit `references/` by hand. CI runs `--check`; a new upstream skill not listed in `vendor-map.json` only prints a warning, a removed or renamed one fails the sync.
 
 3) Validate discovery:
 
@@ -130,6 +109,5 @@ git diff
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
 - `skills/caveman`, `skills/deslopify`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
-- `skills/animation/emil-design-eng`, `skills/animation/animate`, `skills/animation/review-animations`, `skills/animation/improve-animations`, `skills/animation/find-animation-opportunities`, `skills/animation/animation-vocabulary`, and `skills/animation/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
-- `skills/animation/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
-- `skills/animation/motion-conventions` is first-party (display studio) and references the Emil skills and `gsap`; it is not synced from any vendor.
+- `skills/animation` mixes first-party `rules/` (our conventions, Nuxt and vanilla adapters) with `references/` generated from `emilkowalski/skills` (MIT). Not mapped: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift`.
+- `skills/sanity` is generated from `sanity-io/agent-toolkit` (MIT). Not mapped: `portable-text-conversion`, `portable-text-serialization`, `sanity-migration`. `nuxt-sanity` and `sanity-schema-accelerator` stay separate first-party skills.
