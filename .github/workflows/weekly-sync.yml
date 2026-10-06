@@ -61,7 +61,7 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Re-compact vendored skills (gsap, sanity, animation)
+      - name: Re-generate vendored skills (gsap, sanity, animation, shopify)
         run: node scripts/sync-vendored.mjs
 
       - name: Validate updated skills
