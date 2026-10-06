@@ -28,6 +28,7 @@ jobs:
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Update submodules to latest upstream
         run: git submodule update --remote --init --recursive
@@ -38,6 +39,7 @@ jobs:
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Re-copy vendored skills (antfu/skills)
         run: |
@@ -61,6 +63,18 @@ jobs:
           cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
           cp -R vendor/julius-skills/skills/grill-me skills/grill-me
           cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
+
+      - name: Re-copy vendored skills (emilkowalski/skills)
+        run: |
+          rm -rf skills/emil-design-eng skills/animate skills/review-animations skills/improve-animations skills/find-animation-opportunities skills/animation-vocabulary skills/apple-design
+          cp -R vendor/emil-skills/skills/emil-design-eng skills/emil-design-eng
+          cp -R vendor/emil-skills/skills/animate skills/animate
+          cp -R vendor/emil-skills/skills/review-animations skills/review-animations
+          cp -R vendor/emil-skills/skills/improve-animations skills/improve-animations
+          cp -R vendor/emil-skills/skills/find-animation-opportunities skills/find-animation-opportunities
+          cp -R vendor/emil-skills/skills/animation-vocabulary skills/animation-vocabulary
+          cp -R vendor/emil-skills/skills/apple-design skills/apple-design
+          sed -i '/^disable-model-invocation:/d' skills/review-animations/SKILL.md
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -114,12 +128,14 @@ jobs:
             | `antfu/skills` | `${{ steps.before.outputs.antfu }}` | `${{ steps.after.outputs.antfu }}` | ${{ steps.before.outputs.antfu != steps.after.outputs.antfu && 'yes' || 'no' }} |
             | `sanity-io/agent-toolkit` | `${{ steps.before.outputs.sanity }}` | `${{ steps.after.outputs.sanity }}` | ${{ steps.before.outputs.sanity != steps.after.outputs.sanity && 'yes' || 'no' }} |
             | `JuliusBrussee/skills` | `${{ steps.before.outputs.julius }}` | `${{ steps.after.outputs.julius }}` | ${{ steps.before.outputs.julius != steps.after.outputs.julius && 'yes' || 'no' }} |
+            | `emilkowalski/skills` | `${{ steps.before.outputs.emil }}` | `${{ steps.after.outputs.emil }}` | ${{ steps.before.outputs.emil != steps.after.outputs.emil && 'yes' || 'no' }} |
 
             ### Vendored skill directories updated
 
             - `skills/nuxt`, `skills/vue`, `skills/vite` (from `antfu/skills`)
             - `skills/sanity-best-practices`, `skills/content-modeling-best-practices`, `skills/seo-aeo-best-practices`, `skills/content-experimentation-best-practices` (from `sanity-io/agent-toolkit`)
             - `skills/fuck-slop`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
+            - `skills/emil-design-eng`, `skills/animate`, `skills/review-animations`, `skills/improve-animations`, `skills/find-animation-opportunities`, `skills/animation-vocabulary`, `skills/apple-design` (from `emilkowalski/skills`)
 
             ### Validation
 

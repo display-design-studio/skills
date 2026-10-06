@@ -11,6 +11,7 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/vercel-agent-skills` -> `https://github.com/vercel-labs/agent-skills`
 - `vendor/shopify-ai-toolkit` -> `https://github.com/Shopify/Shopify-AI-Toolkit`
 - `vendor/julius-skills` -> `https://github.com/JuliusBrussee/skills`
+- `vendor/emil-skills` -> `https://github.com/emilkowalski/skills`
 
 ## Sync workflow
 
@@ -89,6 +90,19 @@ rm -rf skills/fuck-slop skills/grill-me skills/junior-to-senior
 cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
 cp -R vendor/julius-skills/skills/grill-me skills/grill-me
 cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
+
+rm -rf skills/emil-design-eng skills/animate skills/review-animations skills/improve-animations skills/find-animation-opportunities skills/animation-vocabulary skills/apple-design
+
+cp -R vendor/emil-skills/skills/emil-design-eng skills/emil-design-eng
+cp -R vendor/emil-skills/skills/animate skills/animate
+cp -R vendor/emil-skills/skills/review-animations skills/review-animations
+cp -R vendor/emil-skills/skills/improve-animations skills/improve-animations
+cp -R vendor/emil-skills/skills/find-animation-opportunities skills/find-animation-opportunities
+cp -R vendor/emil-skills/skills/animation-vocabulary skills/animation-vocabulary
+cp -R vendor/emil-skills/skills/apple-design skills/apple-design
+
+# skills-ref rejects this upstream-only field
+sed -i.bak '/^disable-model-invocation:/d' skills/review-animations/SKILL.md && rm skills/review-animations/SKILL.md.bak
 ```
 
 > **Note:** After syncing `gsap-*` skills, re-apply the display studio additions:
@@ -118,3 +132,6 @@ git diff
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
 - `skills/fuck-slop`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
+- `skills/emil-design-eng`, `skills/animate`, `skills/review-animations`, `skills/improve-animations`, `skills/find-animation-opportunities`, `skills/animation-vocabulary`, and `skills/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
+- `skills/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
+- `skills/motion-conventions` is first-party (display studio) and references the Emil and `gsap-*` skills; it is not synced from any vendor.

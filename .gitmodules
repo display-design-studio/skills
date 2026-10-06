@@ -19,3 +19,6 @@
 [submodule "vendor/julius-skills"]
 	path = vendor/julius-skills
 	url = https://github.com/JuliusBrussee/skills.git
+[submodule "vendor/emil-skills"]
+	path = vendor/emil-skills
+	url = https://github.com/emilkowalski/skills
