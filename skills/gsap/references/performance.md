@@ -1,16 +1,10 @@
----
-name: gsap-performance
-description: Official GSAP skill for performance — prefer transforms, avoid layout thrashing, will-change, batching. Use when optimizing GSAP animations, reducing jank, or when the user asks about animation performance, FPS, or smooth 60fps.
-license: MIT
----
-
 # GSAP Performance
 
 ## When to Use This Skill
 
 Apply when optimizing GSAP animations for smooth 60fps, reducing layout/paint cost, or when the user asks about performance, jank, or best practices for fast animations.
 
-**Related skills:** Build animations with **gsap-core** (transforms, autoAlpha) and **gsap-timeline**; for ScrollTrigger performance see **gsap-scrolltrigger**.
+**Related skills:** Build animations with [core](core.md) (transforms, autoAlpha) and [timeline](timeline.md); for ScrollTrigger performance see [scrolltrigger](scrolltrigger.md).
 
 ## Prefer Transform and Opacity
 

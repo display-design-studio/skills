@@ -42,17 +42,6 @@ cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices 
 rm -rf skills/web-design-guidelines
 cp -R vendor/vercel-agent-skills/skills/web-design-guidelines skills/web-design-guidelines
 
-rm -rf skills/gsap-core skills/gsap-timeline skills/gsap-scrolltrigger skills/gsap-plugins skills/gsap-react skills/gsap-utils skills/gsap-performance skills/gsap-frameworks
-
-cp -R vendor/gsap-skills/skills/gsap-core skills/gsap-core
-cp -R vendor/gsap-skills/skills/gsap-timeline skills/gsap-timeline
-cp -R vendor/gsap-skills/skills/gsap-scrolltrigger skills/gsap-scrolltrigger
-cp -R vendor/gsap-skills/skills/gsap-plugins skills/gsap-plugins
-cp -R vendor/gsap-skills/skills/gsap-react skills/gsap-react
-cp -R vendor/gsap-skills/skills/gsap-utils skills/gsap-utils
-cp -R vendor/gsap-skills/skills/gsap-performance skills/gsap-performance
-cp -R vendor/gsap-skills/skills/gsap-frameworks skills/gsap-frameworks
-
 rm -rf skills/shopify-admin skills/shopify-app-store-review skills/shopify-custom-data skills/shopify-customer
 rm -rf skills/shopify-dev skills/shopify-functions skills/shopify-hydrogen skills/shopify-liquid
 rm -rf skills/shopify-onboarding-dev skills/shopify-onboarding-merchant skills/shopify-partner skills/shopify-payments-apps
@@ -108,9 +97,16 @@ cp -R vendor/emil-skills/skills/apple-design skills/animation/apple-design
 sed -i.bak '/^disable-model-invocation:/d' skills/animation/review-animations/SKILL.md && rm skills/animation/review-animations/SKILL.md.bak
 ```
 
-> **Note:** After syncing `gsap-*` skills, re-apply the display studio additions:
-> - `## Debug` section in `skills/gsap-core/SKILL.md` (from `debug-iteration-workflow` custom rule)
-> - `## Helper Functions` section in `skills/gsap-utils/SKILL.md` (from `tools-helper-functions-adoption` custom rule)
+### Compacted skills (one skill per domain)
+
+Domains listed in `scripts/vendor-map.json` are not copied with `cp -R`: `scripts/sync-vendored.mjs` turns each upstream skill into `skills/<group>/references/<topic>.md` (frontmatter stripped, skill names rewritten to links) and regenerates the topic table in the hand-written router `skills/<group>/SKILL.md` (between the `BEGIN/END TOPICS` markers).
+
+```bash
+node scripts/sync-vendored.mjs          # regenerate all groups
+node scripts/sync-vendored.mjs --check  # fail if skills/<group> drifts from vendor + patches
+```
+
+Currently compacted: `gsap` (from `vendor/gsap-skills`). Display studio additions live in `scripts/patches/` and are re-applied automatically (`## Debug` in `references/core.md`, `## Helper Functions` in `references/utils.md`). Never edit `references/` by hand.
 
 3) Validate discovery:
 
@@ -127,7 +123,7 @@ git diff
 
 ## Notes
 
-- GSAP skills (`skills/gsap-*`) are vendored from `greensock/gsap-skills`; after syncing, re-apply the display studio additions noted above.
+- `skills/gsap` is a compacted skill generated from `greensock/gsap-skills` by `scripts/sync-vendored.mjs` (see "Compacted skills").
 - `skills/web-design-guidelines` is vendored from `vercel-labs/agent-skills`.
 - `skills/shopify-*` (excluding `shopify-development`) and `skills/ucp` are vendored from `Shopify/Shopify-AI-Toolkit`.
 - For first-party skills, use `metadata.author: display studio`.
@@ -136,4 +132,4 @@ git diff
 - `skills/caveman`, `skills/deslopify`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
 - `skills/animation/emil-design-eng`, `skills/animation/animate`, `skills/animation/review-animations`, `skills/animation/improve-animations`, `skills/animation/find-animation-opportunities`, `skills/animation/animation-vocabulary`, and `skills/animation/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
 - `skills/animation/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
-- `skills/animation/motion-conventions` is first-party (display studio) and references the Emil and `gsap-*` skills; it is not synced from any vendor.
+- `skills/animation/motion-conventions` is first-party (display studio) and references the Emil skills and `gsap`; it is not synced from any vendor.

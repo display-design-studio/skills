@@ -1,16 +1,17 @@
----
-name: gsap-plugins
-description: Official GSAP skill for GSAP plugins — registration, ScrollToPlugin, ScrollSmoother, Flip, Draggable, Inertia, Observer, SplitText, ScrambleText, SVG and physics plugins, CustomEase, EasePack, CustomWiggle, CustomBounce, GSDevTools. Use when the user asks about a GSAP plugin, scroll-to, flip animations, draggable, SVG drawing, or plugin registration.
-license: MIT
----
-
 # GSAP Plugins
 
 ## When to Use This Skill
 
-Apply when using or reviewing code that uses GSAP plugins: registering plugins, scroll-to, flip/FLIP animations, draggable elements, SVG (DrawSVG, MorphSVG, MotionPath), text (SplitText, ScrambleText), physics, easing plugins (CustomEase, EasePack, CustomWiggle, CustomBounce), or GSDevTools. ScrollTrigger has its own skill (gsap-scrolltrigger).
+Apply when using or reviewing code that uses GSAP plugins: registering plugins, scroll-to, flip/FLIP animations, draggable elements, SVG (DrawSVG, MorphSVG, MotionPath), text (SplitText, ScrambleText), physics, easing plugins (CustomEase, EasePack, CustomWiggle, CustomBounce), or GSDevTools. ScrollTrigger has its own skill ([scrolltrigger](scrolltrigger.md)).
 
-**Related skills:** For core tweens use **gsap-core**; for ScrollTrigger use **gsap-scrolltrigger**; for React use **gsap-react**.
+**Related skills:** For core tweens use [core](core.md); for ScrollTrigger use [scrolltrigger](scrolltrigger.md); for React use [react](react.md).
+
+## Licensing & Install (important)
+
+Every GSAP plugin is **free**, including for commercial use. Since [Webflow's acquisition of GSAP](https://gsap.com/blog/webflow-GSAP/), Club GSAP is no longer a paid tier and **no plugin requires a membership, license key, or auth token** — this includes formerly Club-only plugins (**SplitText**, **MorphSVG**, etc.).
+
+- ✅ Install everything from the public `gsap` npm package: `npm install gsap`. All plugins are included — import them as `gsap/SplitText`, `gsap/MorphSVGPlugin`, etc.
+- ❌ Do **not** generate an `.npmrc` with a GreenSock auth token, suggest the private `npm.greensock.com` registry, or tell users to sign up for Club GSAP to access a plugin. Those instructions are outdated.
 
 ## Registering Plugins
 
@@ -331,7 +332,7 @@ const helper = MotionPathHelper.create(".dot", "#path", { end: 0.5 });
 
 ### CustomEase
 
-Custom easing curves (cubic-bezier or SVG path). Use when a built-in ease is not enough. Basic usage is covered in gsap-core; register when using:
+Custom easing curves (cubic-bezier or SVG path). Use when a built-in ease is not enough. Basic usage is covered in [core](core.md); register when using:
 
 ```javascript
 gsap.registerPlugin(CustomEase);

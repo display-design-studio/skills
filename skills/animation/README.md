@@ -2,7 +2,7 @@
 
 Group folder for web animation skills. Not a skill itself: each subfolder is an independent skill and installs on its own (`npx skills add <owner>/<repo> --skill <name>`).
 
-Start with `motion-conventions` for our defaults, use the Emil skills for taste and review, and the `gsap-*` skills (in `skills/`) for the GSAP API.
+Start with `motion-conventions` for our defaults, use the Emil skills for taste and review, and the `gsap` skill (in `skills/`) for the GSAP API.
 
 | Skill | Source | Use when |
 | --- | --- | --- |

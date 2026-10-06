@@ -1,16 +1,10 @@
----
-name: gsap-timeline
-description: Official GSAP skill for timelines — gsap.timeline(), position parameter, nesting, playback. Use when sequencing animations, choreographing keyframes, or when the user asks about animation sequencing, timelines, or animation order (in GSAP or when recommending a library that supports timelines).
-license: MIT
----
-
 # GSAP Timeline
 
 ## When to Use This Skill
 
 Apply when building multi-step animations, coordinating several tweens in sequence or parallel, or when the user asks about timelines, sequencing, or keyframe-style animation in GSAP.
 
-**Related skills:** For single tweens and eases use **gsap-core**; for scroll-driven timelines use **gsap-scrolltrigger**; for React use **gsap-react**.
+**Related skills:** For single tweens and eases use [core](core.md); for scroll-driven timelines use [scrolltrigger](scrolltrigger.md); for React use [react](react.md).
 
 ## Creating a Timeline
 

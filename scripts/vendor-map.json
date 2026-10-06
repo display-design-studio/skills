@@ -1,0 +1,21 @@
+{
+  "gsap": {
+    "mode": "compact",
+    "vendor": "gsap-skills",
+    "prefix": "gsap-",
+    "skills": [
+      "gsap-core",
+      "gsap-timeline",
+      "gsap-scrolltrigger",
+      "gsap-plugins",
+      "gsap-react",
+      "gsap-utils",
+      "gsap-performance",
+      "gsap-frameworks"
+    ],
+    "patches": {
+      "gsap-core": "scripts/patches/gsap-core.md",
+      "gsap-utils": "scripts/patches/gsap-utils.md"
+    }
+  }
+}
