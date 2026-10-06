@@ -21,6 +21,7 @@
 ### First-party (Display Studio)
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
+- `motion-conventions`: performant, refined web animation conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup) with Nuxt and vanilla JS adapters; pairs with the vendored Emil Kowalski animation skills and `gsap-*`.
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
 - `ruby`: core Ruby language best practices (independent of any framework) covering syntax and types, collections/Enumerable, blocks/procs/lambdas, OOP and modules, metaprogramming, Bundler/gems, testing (RSpec/Minitest), and style/typing tooling (RuboCop, RBS, Steep, ruby-lsp).
@@ -77,6 +78,18 @@
 - `grill-me`
 - `junior-to-senior`
 
+### Vendored from `emilkowalski/skills`
+
+MIT licensed, © Emil Kowalski. Web animation subset only.
+
+- `emil-design-eng`
+- `animate`
+- `review-animations`
+- `improve-animations`
+- `find-animation-opportunities`
+- `animation-vocabulary`
+- `apple-design`
+
 ### Vendored from `dietrichgebert/ponytail`
 
 - `ponytail`
@@ -132,6 +145,7 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: see the command above
 - `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
+- `emilkowalski/skills`: `emil-design-eng`, `animate`, `review-animations`, `improve-animations`, `find-animation-opportunities`, `animation-vocabulary`, `apple-design`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 
