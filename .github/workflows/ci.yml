@@ -20,11 +20,11 @@ jobs:
 
       - name: Validate all skills
         run: |
-          for skill_dir in skills/*; do
-            if [ -d "$skill_dir" ]; then
-              echo "Validating $skill_dir"
-              npx -y skills-ref validate "$skill_dir"
-            fi
+          # skills live at skills/<name>/ or in a group folder skills/<group>/<name>/
+          find skills -mindepth 2 -maxdepth 3 -name SKILL.md | sort | while read -r f; do
+            skill_dir=$(dirname "$f")
+            echo "Validating $skill_dir"
+            npx -y skills-ref validate "$skill_dir" || exit 1
           done
 
       - name: Smoke test skills discovery

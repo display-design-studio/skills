@@ -93,18 +93,19 @@ rm -rf skills/ponytail
 
 cp -R vendor/ponytail-skills/skills/ponytail skills/ponytail
 
-rm -rf skills/emil-design-eng skills/animate skills/review-animations skills/improve-animations skills/find-animation-opportunities skills/animation-vocabulary skills/apple-design
+rm -rf skills/animation/emil-design-eng skills/animation/animate skills/animation/review-animations skills/animation/improve-animations skills/animation/find-animation-opportunities skills/animation/animation-vocabulary skills/animation/apple-design
+mkdir -p skills/animation
 
-cp -R vendor/emil-skills/skills/emil-design-eng skills/emil-design-eng
-cp -R vendor/emil-skills/skills/animate skills/animate
-cp -R vendor/emil-skills/skills/review-animations skills/review-animations
-cp -R vendor/emil-skills/skills/improve-animations skills/improve-animations
-cp -R vendor/emil-skills/skills/find-animation-opportunities skills/find-animation-opportunities
-cp -R vendor/emil-skills/skills/animation-vocabulary skills/animation-vocabulary
-cp -R vendor/emil-skills/skills/apple-design skills/apple-design
+cp -R vendor/emil-skills/skills/emil-design-eng skills/animation/emil-design-eng
+cp -R vendor/emil-skills/skills/animate skills/animation/animate
+cp -R vendor/emil-skills/skills/review-animations skills/animation/review-animations
+cp -R vendor/emil-skills/skills/improve-animations skills/animation/improve-animations
+cp -R vendor/emil-skills/skills/find-animation-opportunities skills/animation/find-animation-opportunities
+cp -R vendor/emil-skills/skills/animation-vocabulary skills/animation/animation-vocabulary
+cp -R vendor/emil-skills/skills/apple-design skills/animation/apple-design
 
 # skills-ref rejects this upstream-only field
-sed -i.bak '/^disable-model-invocation:/d' skills/review-animations/SKILL.md && rm skills/review-animations/SKILL.md.bak
+sed -i.bak '/^disable-model-invocation:/d' skills/animation/review-animations/SKILL.md && rm skills/animation/review-animations/SKILL.md.bak
 ```
 
 > **Note:** After syncing `gsap-*` skills, re-apply the display studio additions:
@@ -133,6 +134,6 @@ git diff
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
 - `skills/caveman`, `skills/deslopify`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
-- `skills/emil-design-eng`, `skills/animate`, `skills/review-animations`, `skills/improve-animations`, `skills/find-animation-opportunities`, `skills/animation-vocabulary`, and `skills/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
-- `skills/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
-- `skills/motion-conventions` is first-party (display studio) and references the Emil and `gsap-*` skills; it is not synced from any vendor.
+- `skills/animation/emil-design-eng`, `skills/animation/animate`, `skills/animation/review-animations`, `skills/animation/improve-animations`, `skills/animation/find-animation-opportunities`, `skills/animation/animation-vocabulary`, and `skills/animation/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
+- `skills/animation/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
+- `skills/animation/motion-conventions` is first-party (display studio) and references the Emil and `gsap-*` skills; it is not synced from any vendor.

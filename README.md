@@ -14,6 +14,7 @@
 - One directory per skill: `skills/<skill-name>/`
 - Skill entrypoint: `skills/<skill-name>/SKILL.md`
 - Modular rules: `skills/<skill-name>/rules/*.md`
+- Thematic groups are allowed as `skills/<group>/<skill>/SKILL.md` (e.g. `skills/animation/`); each skill keeps its own `name` and installs on its own
 - Upstream vendors tracked as submodules under `vendor/`
 
 ## Included skills
@@ -21,7 +22,7 @@
 ### First-party (Display Studio)
 
 - `gsap`: comprehensive GSAP v3 best practices for fundamentals, plugins, tooling, performance, accessibility, and debug workflows.
-- `motion-conventions`: performant, refined web animation conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup) with Nuxt and vanilla JS adapters; pairs with the vendored Emil Kowalski animation skills and `gsap-*`.
+- `animation/motion-conventions`: performant, refined web animation conventions (scroll-reveal presets, Lenis + GSAP ticker, page transitions, reduced motion, cleanup) with Nuxt and vanilla JS adapters; pairs with the vendored Emil Kowalski animation skills and `gsap-*`.
 - `nuxt-sanity`: `@nuxtjs/sanity` module integration best practices for Nuxt 3 + Sanity CMS. Covers `useSanityQuery`, `useLazySanityQuery`, `useSanity`, `SanityImage`, `SanityContent` (Portable Text), visual editing with stega, TypeScript typegen, named clients, Nitro server routes, CORS, caching patterns, and dynamic sitemap generation.
 - `nuxt-seo`: `@nuxtjs/robots` best practices for Nuxt 3. Covers robots.txt configuration, `blockNonSeoBots`, `blockAiBots`, per-page noindex via `definePageMeta`, route rules, `useRobotsRule` composable, environment-based indexing, and `llms.txt` for AI tool documentation access.
 - `ruby`: core Ruby language best practices (independent of any framework) covering syntax and types, collections/Enumerable, blocks/procs/lambdas, OOP and modules, metaprogramming, Bundler/gems, testing (RSpec/Minitest), and style/typing tooling (RuboCop, RBS, Steep, ruby-lsp).
@@ -80,7 +81,7 @@
 
 ### Vendored from `emilkowalski/skills`
 
-MIT licensed, © Emil Kowalski. Web animation subset only.
+MIT licensed, © Emil Kowalski. Web animation subset only. Lives in `skills/animation/` (see its [README](skills/animation/README.md)).
 
 - `emil-design-eng`
 - `animate`
