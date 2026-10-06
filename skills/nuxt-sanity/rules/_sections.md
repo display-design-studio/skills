@@ -1,7 +1,7 @@
 # Nuxt + Sanity Rule Sections
 
 This skill covers the `@nuxtjs/sanity` integration layer only.
-For GROQ optimization → load `sanity-best-practices`.
+For GROQ optimization → load `sanity`.
 For Nuxt core patterns → load `nuxt`.
 
 ## 1) Core (`core-`)

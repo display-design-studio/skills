@@ -36,4 +36,4 @@ Source conventions: Display Studio project schema patterns provided by user.
 
 - This skill focuses on schema code generation only.
 - For broad Sanity architecture, GROQ, Visual Editing, and TypeGen workflows,
-  use `skills/sanity-best-practices`.
+  use the `sanity` skill.

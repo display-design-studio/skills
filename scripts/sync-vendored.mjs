@@ -4,14 +4,19 @@
 //   node scripts/sync-vendored.mjs            regenerate every group in scripts/vendor-map.json
 //   node scripts/sync-vendored.mjs gsap       regenerate one group
 //   node scripts/sync-vendored.mjs --check    regenerate in a temp dir and fail on any diff
+//   node scripts/sync-vendored.mjs --vendors  print the vendor submodules the map needs
 //
 // Per upstream skill <vendor>/skills/<name>/:
 //   SKILL.md          -> skills/<group>/references/<short>.md   (frontmatter stripped)
 //   other files/dirs  -> skills/<group>/references/<short>/...
+// Relative paths a skill body uses for its own files (references/x.md, RECIPES.md) are rewritten to
+// <short>/<path>; mentions of other mapped skills with a hyphen in the name become links.
 // The router skills/<group>/SKILL.md is first-party: only the block between
 // <!-- BEGIN TOPICS --> and <!-- END TOPICS --> is regenerated from the upstream descriptions.
+// Upstream skills that are neither in `skills` nor in `ignore` raise a warning (new upstream skill);
+// a mapped skill missing upstream is a hard error (removed or renamed upstream).
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,10 +46,63 @@ function readDescription(fm) {
   return value.replace(/^(["'])([\s\S]*)\1$/, '$2').replace(/\s+/g, ' ').trim()
 }
 
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Mentions of other mapped skills (**name**, `name` or bare) -> link. Only hyphenated names are
+// rewritten: a bare word like "animate" is far too common to touch.
 function rewriteLinks(body, cfg, dir = '') {
-  const names = cfg.skills.map((s) => s.slice(cfg.prefix.length)).join('|')
-  const re = new RegExp(`(\\*\\*)?\\b${cfg.prefix}(${names})\\b(?![\\w-])(\\*\\*)?`, 'g')
-  return body.replace(re, (_, _a, short) => `[${short}](${dir}${short}.md)`)
+  const prefix = cfg.prefix ?? ''
+  const alt = cfg.skills.filter((n) => n.includes('-')).sort((a, b) => b.length - a.length).map(escapeRe).join('|')
+  if (!alt) return body
+  const re = new RegExp(`(?<![\\w./-])(\\*\\*|\`)?(${alt})\\1?(?![\\w-])`, 'g')
+  return body.replace(re, (_, _w, name) => {
+    const short = name.slice(prefix.length)
+    return `[${short}](${dir}${short}.md)`
+  })
+}
+
+// Files shipped next to SKILL.md move to references/<short>/, so paths the body uses for them change.
+function listFiles(dir, base = '') {
+  return readdirSync(join(dir, base)).flatMap((e) => {
+    const rel = base ? `${base}/${e}` : e
+    return statSync(join(dir, rel)).isDirectory() ? listFiles(dir, rel) : [rel]
+  })
+}
+
+function rewritePaths(body, short, files) {
+  let out = body
+  for (const f of [...files].sort((a, b) => b.length - a.length)) {
+    out = out.replace(new RegExp(`(?<![\\w./-])${escapeRe(f)}(?![\\w-])`, 'g'), `${short}/${f}`)
+  }
+  return out
+}
+
+function warnUnlisted(cfg, group) {
+  const dir = join(ROOT, 'vendor', cfg.vendor, 'skills')
+  for (const e of readdirSync(dir)) {
+    if (!statSync(join(dir, e)).isDirectory()) continue
+    if (cfg.skills.includes(e) || cfg.ignore?.includes(e)) continue
+    console.warn(`::warning::${group}: new upstream skill "${e}" in ${cfg.vendor} is not in vendor-map.json (add to "skills" or "ignore")`)
+  }
+}
+
+function warnBrokenLinks(group, groupDir) {
+  const broken = []
+  const walk = (d) => {
+    for (const e of readdirSync(d)) {
+      const f = join(d, e)
+      if (statSync(f).isDirectory()) walk(f)
+      else if (e.endsWith('.md')) {
+        for (const m of readFileSync(f, 'utf8').matchAll(/\]\(([^)\s]+)\)/g)) {
+          const target = m[1].split('#')[0]
+          if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue
+          if (!existsSync(resolve(dirname(f), target))) broken.push(`${f.slice(groupDir.length + 1)} -> ${target}`)
+        }
+      }
+    }
+  }
+  walk(groupDir)
+  if (broken.length) console.warn(`warning: ${group}: ${broken.length} broken relative link(s), e.g. ${broken.slice(0, 3).join('; ')}`)
 }
 
 function compact(group, cfg, skillsDir) {
@@ -55,20 +113,22 @@ function compact(group, cfg, skillsDir) {
   const rows = []
 
   for (const name of cfg.skills) {
-    const short = name.slice(cfg.prefix.length)
+    const short = name.slice((cfg.prefix ?? '').length)
     const src = join(ROOT, 'vendor', cfg.vendor, 'skills', name)
     if (!existsSync(join(src, 'SKILL.md'))) throw new Error(`missing upstream skill: ${src}`)
     const { fm, body } = splitFrontmatter(readFileSync(join(src, 'SKILL.md'), 'utf8'))
-    let out = rewriteLinks(body, cfg)
+    const extras = readdirSync(src).filter((e) => e !== 'SKILL.md')
+    const files = extras.flatMap((e) => (statSync(join(src, e)).isDirectory() ? listFiles(src, e) : [e]))
+    let out = rewritePaths(rewriteLinks(body, cfg), short, files)
     if (cfg.patches?.[name]) out = out.replace(/\n*$/, '\n') + readFileSync(join(ROOT, cfg.patches[name]), 'utf8')
     writeFileSync(join(refs, `${short}.md`), out.replace(/\n*$/, '\n'))
-    for (const entry of readdirSync(src)) {
-      if (entry === 'SKILL.md') continue
+    for (const entry of extras) {
       cpSync(join(src, entry), join(refs, short, entry), { recursive: true })
     }
     rows.push(`| [\`${short}\`](references/${short}.md) | ${rewriteLinks(readDescription(fm), cfg, 'references/').replace(/\|/g, '\\|')} |`)
   }
 
+  warnUnlisted(cfg, group)
   const routerPath = join(groupDir, 'SKILL.md')
   const router = readFileSync(routerPath, 'utf8')
   const a = router.indexOf(BEGIN)
@@ -76,9 +136,14 @@ function compact(group, cfg, skillsDir) {
   if (a < 0 || b < a) throw new Error(`${routerPath}: topic markers not found`)
   const table = ['| topic | use it when |', '| --- | --- |', ...rows].join('\n')
   writeFileSync(routerPath, `${router.slice(0, a + BEGIN.length)}\n${table}\n${router.slice(b)}`)
+  warnBrokenLinks(group, groupDir)
 }
 
 const args = process.argv.slice(2)
+if (args.includes('--vendors')) {
+  console.log([...new Set(Object.values(MAP).map((c) => `vendor/${c.vendor}`))].join(' '))
+  process.exit(0)
+}
 const check = args.includes('--check')
 const only = args.filter((a) => !a.startsWith('--'))
 const groups = Object.entries(MAP).filter(([g]) => only.length === 0 || only.includes(g))
@@ -91,7 +156,8 @@ if (!check) {
   const tmp = mkdtempSync(join(tmpdir(), 'compact-'))
   let failed = false
   for (const [g, cfg] of groups) {
-    cpSync(join(ROOT, 'skills', g, 'SKILL.md'), join(tmp, g, 'SKILL.md'), { recursive: true })
+    // first-party files (router, rules/) are inputs; references/ is the generated output
+    cpSync(join(ROOT, 'skills', g), join(tmp, g), { recursive: true })
     compact(g, cfg, tmp)
     try {
       execFileSync('diff', ['-r', join(tmp, g), join(ROOT, 'skills', g)], { stdio: 'inherit' })

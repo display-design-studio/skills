@@ -33,4 +33,4 @@ Adapted from Emil Kowalski's `performance-cheatsheet.md` (MIT) and our own rules
 | Add `will-change: transform` only if you observe a 1px shift or flicker | Blanket `will-change` |
 | Drive Lenis from the GSAP ticker (single RAF loop) | Two competing `requestAnimationFrame` loops |
 
-For easing curves, duration budgets and spring guidance, use `emil-design-eng` instead of restating them here.
+For easing curves, duration budgets and spring guidance, see [emil-design-eng](../references/emil-design-eng.md) instead of restating them here.

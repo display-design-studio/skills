@@ -125,4 +125,4 @@ const components = {
 
 - SanityContent component: https://sanity.nuxtjs.org/components/sanity-content
 - Portable Text spec: https://github.com/portabletext/portabletext
-- Cross-reference: `sanity-best-practices/references/portable-text.md` for custom block design patterns
+- Cross-reference: `sanity` skill: `references/sanity-best-practices/references/portable-text.md` for custom block design patterns
