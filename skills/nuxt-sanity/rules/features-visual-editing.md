@@ -1,196 +1,149 @@
-# Visual Editing and Live Preview in Nuxt
+# Visual Editing and Live Preview
 
-## Why it matters
+## Module configuration
 
-Visual editing requires stega-encoded strings in draft mode responses and a correctly
-configured Presentation tool URL. Auth tokens must never be in `runtimeConfig.public`.
-A misconfigured token or missing `stegaClean()` call causes broken comparisons or
-data leaking into the client bundle.
-
----
-
-## Module configuration for visual editing
+Configure a Viewer token under `sanity.visualEditing`. It is used by the module's server-side preview
+proxy and is not exposed in public runtime configuration.
 
 ```ts
-// nuxt.config.ts
 sanity: {
-  projectId: process.env.NUXT_PUBLIC_SANITY_PROJECT_ID,
+  projectId: process.env.NUXT_SANITY_PROJECT_ID,
   dataset: 'production',
-  apiVersion: '2024-01-01',
-  useCdn: false, // must be false for draft/visual editing — the module also force-disables
-                 // the CDN automatically while preview is active (`disableSmartCdn`, on by default)
+  apiVersion: '2026-03-10',
+  perspective: 'published',
+  useCdn: true,
   visualEditing: {
-    studioUrl: process.env.NUXT_SANITY_VISUAL_EDITING_STUDIO_URL || 'http://localhost:3333',
-    token: process.env.NUXT_SANITY_TOKEN, // required here explicitly — see note below
-  },
-},
-runtimeConfig: {
-  sanity: {
-    token: process.env.NUXT_SANITY_TOKEN, // still needed separately for server-side/client requests
+    token: process.env.NUXT_SANITY_VISUAL_EDITING_TOKEN,
+    studioUrl: process.env.NUXT_SANITY_VISUAL_EDITING_STUDIO_URL,
+    stega: true,
   },
 },
 ```
 
-`runtimeConfig.sanity.token` covers server-side/client requests made through `sanity.fetch()`, but
-the visual editing feature does **not** inherit it: `options.visualEditing.token` must be set
-explicitly at config level, or module setup fails. Verified on `@nuxtjs/sanity@2.3.0` — omitting it
-makes `nuxi prepare` (and dev/build) fail with:
+Do not duplicate this token in `runtimeConfig.sanity.token` unless unrelated authenticated server
+reads genuinely require it. Do not use an Editor or Administrator token for preview.
 
+With default `disableSmartCdn: false`, the module disables the Sanity API CDN during Nuxt preview
+mode. The global published configuration can remain `useCdn: true`.
+
+## Native preview routes
+
+`@nuxtjs/sanity` supplies `/preview/enable` and `/preview/disable`. The enable route validates the
+Presentation preview secret and sets `sanity-preview-id` to a private, generated `previewModeId`.
+The module's `/_sanity/visual-editing/fetch` proxy checks the same exact cookie before using the
+Viewer token.
+
+Do not add a second draft-mode cookie or treat the mere presence of `sanity-preview-id` as proof of
+preview authorization.
+
+## Preview cache isolation on Netlify
+
+Every cacheable page response must declare the same targeted variation, whether the request is public
+or preview. Netlify uses the first variation policy stored for a URL.
+
+```ts
+// server/middleware/sanity-preview-cache.ts
+export default defineEventHandler((event) => {
+  const cookies = parseCookies(event)
+  const path = getRequestURL(event).pathname
+  const isApiRoute = path.startsWith('/api/')
+  const isStaticAsset = /\.(?:js|css|woff2?|ico|png|svg)$/.test(path)
+  const isSanityInfrastructure
+    = path.startsWith('/preview/') || path.startsWith('/_sanity/')
+
+  if (!isApiRoute && !isStaticAsset)
+    setResponseHeader(event, 'Netlify-Vary', 'cookie=sanity-preview-id')
+
+  const config = useRuntimeConfig(event)
+  const previewModeId = config.sanity?.visualEditing?.previewModeId
+  const isPreview = Boolean(
+    previewModeId && cookies['sanity-preview-id'] === previewModeId,
+  )
+
+  if (!isPreview && !isSanityInfrastructure)
+    return
+
+  setNoStore(event)
+  event.context.nitro = event.context.nitro ?? {}
+  event.context.nitro.noCache = true
+})
 ```
-WARN Could not enable visual editing: 'token' is required.
+
+Use `Netlify-Vary: cookie=sanity-preview-id`, not broad `Vary: Cookie`. Do not vary public API routes
+by cookies; the preview branch uses the module proxy instead of `/api/sanity/*`.
+
+Also opt the module infrastructure out of ISR and indexing:
+
+```ts
+routeRules: {
+  '/preview/**': {
+    isr: false,
+    robots: false,
+    headers: { 'cache-control': 'no-store' },
+  },
+  '/_sanity/**': {
+    isr: false,
+    robots: false,
+    headers: { 'cache-control': 'no-store' },
+  },
+},
 ```
 
-Yes, this means the same token value is configured twice (once in `visualEditing.token`, once in
-`runtimeConfig.sanity.token`) — that duplication is required by the module, not a mistake.
+## Preview queries
 
-**Token scope**: use a token with **Viewer** permissions for preview/draft fetching — never an
-Editor or Admin token on the frontend, even server-side. Reserve a separate, more privileged
-token (never used for this preview flow) for any endpoint that actually needs to mutate content.
-Note that Sanity asset files are never private, even on a private dataset, so a leaked Viewer
-token exposes document data but not more than the asset URLs already would.
+Use `useSanityQuery` in the preview branch. In the default `live-visual-editing` mode, the module
+forwards browser queries through the authenticated proxy and coordinates live updates with
+Presentation.
 
----
+Pass reactive getters for route and locale values. Plain object snapshots do not update when Nuxt
+reuses a page component for a different route.
 
-## Preview mode — native module endpoints
+## Stega safety
 
-`@nuxtjs/sanity` provides built-in endpoints at `/preview/enable` and `/preview/disable`.
-These are the only preview toggle routes used — no custom `/api/draft-mode` route is needed.
+Stega metadata is required for click-to-edit overlays but must not leak into public cached responses.
 
-When `/preview/enable` is called, the module sets a `sanity-preview-id` cookie and activates
-`perspective: 'previewDrafts'` for subsequent requests on that session.
-
-The preview cache guard in `server/middleware/sanity-preview-cache.ts` reads this cookie to
-disable Nitro and CDN caching for preview sessions (see `perf-cdn-caching.md`).
-
-Do NOT add a custom draft-mode server route — it is redundant and would use a different cookie
-(`__prerender_bypass`) that the cache middleware does not check.
-
-> **Search exception:** `useSanitySearch` (or any search composable) always routes through the
-> cached API endpoint and never uses the preview path. Draft content must not appear in search
-> results — published content only.
-
----
-
-## Stega encoding
-
-When visual editing is active, Sanity injects invisible stega metadata into string fields.
-Strings will contain embedded source map data that powers click-to-edit overlays.
-
-**Important:** Always call `stegaClean()` before string comparisons or key lookups — this applies
-to any use of a Sanity string value in a conditional, not just slugs: `v-if`/`v-else` branches,
-`:class` bindings, string-length checks, `Array.includes()`, etc. all break silently if the value
-still carries stega metadata.
+- Pass `{ stega: false }` to public server-route fetches.
+- Use `stegaClean()` before comparisons, lookup keys, URLs, classes, IDs, and other semantic uses of
+  strings returned by preview queries.
+- Do not strip stega from visible preview text that needs overlay attribution.
 
 ```ts
 import { stegaClean } from '@sanity/client/stega'
 
-// ❌ Can fail silently — stega metadata changes the string value
-if (post.category === 'news') { ... }
-
-// ✅ Strip stega before comparing
-if (stegaClean(post.category) === 'news') { ... }
+const category = computed(() => stegaClean(article.value?.category))
 ```
 
-→ See `sanity-best-practices/rules/visual-editing-stega-clean.md` for full stegaClean patterns.
+## Presentation configuration
 
----
-
-## `stega: false` on server-side fetches
-
-All `server/api/sanity/*.get.ts` handlers must pass `{ stega: false }` as the third argument to
-`sanity.fetch()`:
+Point the Studio Presentation tool at the module's native routes:
 
 ```ts
-return sanity.fetch(query, params, { stega: false })
-```
-
-Sanity's stega encoding injects invisible metadata into string fields to power Visual Editing
-overlays. Without `{ stega: false }`, this metadata leaks into cached API responses and is served
-to regular visitors who have no Visual Editing context. See `perf-query-keys-and-caching.md` for
-the cache angle.
-
----
-
-## Preview cache guard — scope restriction
-
-The preview bypass middleware (`server/middleware/sanity-preview-cache.ts`) sets
-`Cache-Control: no-store` and `Vary: Cookie` **only on page routes**, not on `/api/*` or static
-assets:
-
-```ts
-const path = getRequestPath(event)
-if (!path.startsWith('/api/') && !path.match(/\.(js|css|woff|ico|png|svg)$/)) {
-  appendHeader(event, 'Vary', 'Cookie')
-}
-```
-
-Setting `Vary: Cookie` on API routes would fragment the CDN cache — the CDN would store separate
-entries per cookie value, degrading cache efficiency for anonymous users and inflating edge memory.
-
----
-
-## Presentation tool configuration in Sanity Studio
-
-In your Sanity Studio project, configure the Presentation tool to point to your Nuxt app:
-
-```ts
-// sanity.config.ts (in Studio)
-import { presentationTool } from 'sanity/presentation'
-
-export default defineConfig({
-  plugins: [
-    presentationTool({
-      previewUrl: {
-        origin: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        previewMode: {
-          enable: '/preview/enable',
-          disable: '/preview/disable',
-        },
-      },
-    }),
-  ],
+presentationTool({
+  previewUrl: {
+    origin: process.env.SANITY_STUDIO_PREVIEW_ORIGIN || 'http://localhost:3000',
+    previewMode: {
+      enable: '/preview/enable',
+      disable: '/preview/disable',
+    },
+  },
 })
 ```
 
----
+Add the application origins required by the project to Sanity CORS. Enable credentials only when the
+chosen client flow actually sends credentials directly to Sanity; the standard module preview proxy
+keeps the Viewer token server-side.
 
-## Incorrect
+## Verification
 
-```env
-# ❌ Token in a NUXT_PUBLIC_* env var — ships to client bundle
-NUXT_PUBLIC_SANITY_TOKEN=sk...
-```
-
-```ts
-// ❌ Token in runtimeConfig.public
-runtimeConfig: {
-  public: {
-    sanityToken: process.env.NUXT_PUBLIC_SANITY_TOKEN,
-  },
-},
-```
-
-## Correct
-
-```env
-# ✅ Private env var — NUXT_ prefix required for Nuxt's runtimeConfig auto-mapping
-NUXT_SANITY_TOKEN=sk...
-```
-
-```ts
-// ✅ Token in private runtimeConfig (auto-populated from NUXT_SANITY_TOKEN)
-runtimeConfig: {
-  sanity: {
-    token: '',
-  },
-},
-```
-
----
+- A public request has `Netlify-Vary: cookie=sanity-preview-id` and remains cacheable.
+- A valid preview request has both browser and Netlify no-store headers.
+- A forged or arbitrary preview cookie does not bypass caching or unlock the proxy.
+- `/preview/**` and `/_sanity/**` are no-store and noindex.
+- Draft edits update through Presentation while public visitors continue receiving published data.
+- Public endpoint responses contain no stega metadata or authorization token.
 
 ## Docs
 
-- Visual editing: https://sanity.nuxtjs.org/visual-editing
-- Presentation tool: https://www.sanity.io/docs/presentation
-- Cross-reference: `sanity-best-practices/rules/visual-editing-stega-clean.md`
-- Cross-reference: `sanity-best-practices/rules/visual-editing-presentation-tool.md`
+- Nuxt Sanity visual editing: https://sanity.nuxtjs.org/getting-started/visual-editing
+- Sanity Presentation: https://www.sanity.io/docs/presentation
+- Netlify cache variation: https://docs.netlify.com/build/caching/caching-overview/

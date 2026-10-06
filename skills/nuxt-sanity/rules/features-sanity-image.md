@@ -164,4 +164,4 @@ const lqip = computed(() =>
 
 - SanityImage component: https://sanity.nuxtjs.org/components/sanity-image
 - Image URL builder (`@sanity/image-url`): https://www.sanity.io/docs/image-url
-- Cross-reference: `sanity-best-practices/rules/image-hotspot.md` for GROQ projection patterns
+- Cross-reference: `sanity-best-practices/references/image.md` for GROQ projection patterns

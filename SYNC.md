@@ -7,11 +7,11 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/antfu-skills` -> `https://github.com/antfu/skills`
 - `vendor/sanity-agent-toolkit` -> `https://github.com/sanity-io/agent-toolkit`
 - `vendor/gsap-skills` -> `https://github.com/greensock/gsap-skills`
-- `vendor/caveman-skills` -> `https://github.com/juliusbrussee/caveman`
 - `vendor/vercel-agent-skills` -> `https://github.com/vercel-labs/agent-skills`
 - `vendor/shopify-ai-toolkit` -> `https://github.com/Shopify/Shopify-AI-Toolkit`
 - `vendor/julius-skills` -> `https://github.com/JuliusBrussee/skills`
 - `vendor/emil-skills` -> `https://github.com/emilkowalski/skills`
+- `vendor/ponytail-skills` -> `https://github.com/dietrichgebert/ponytail`
 
 ## Sync workflow
 
@@ -38,9 +38,6 @@ cp -R vendor/sanity-agent-toolkit/skills/sanity-best-practices skills/sanity-bes
 cp -R vendor/sanity-agent-toolkit/skills/content-modeling-best-practices skills/content-modeling-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/seo-aeo-best-practices skills/seo-aeo-best-practices
 cp -R vendor/sanity-agent-toolkit/skills/content-experimentation-best-practices skills/content-experimentation-best-practices
-
-rm -rf skills/caveman
-cp -R vendor/caveman-skills/skills/caveman skills/caveman
 
 rm -rf skills/web-design-guidelines
 cp -R vendor/vercel-agent-skills/skills/web-design-guidelines skills/web-design-guidelines
@@ -85,11 +82,16 @@ cp -R vendor/shopify-ai-toolkit/skills/shopify-storefront-graphql skills/shopify
 cp -R vendor/shopify-ai-toolkit/skills/shopify-use-shopify-cli skills/shopify-use-shopify-cli
 cp -R vendor/shopify-ai-toolkit/skills/ucp skills/ucp
 
-rm -rf skills/fuck-slop skills/grill-me skills/junior-to-senior
+rm -rf skills/caveman skills/deslopify skills/grill-me skills/junior-to-senior
 
-cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
+cp -R vendor/julius-skills/skills/caveman skills/caveman
+cp -R vendor/julius-skills/skills/deslopify skills/deslopify
 cp -R vendor/julius-skills/skills/grill-me skills/grill-me
 cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
+
+rm -rf skills/ponytail
+
+cp -R vendor/ponytail-skills/skills/ponytail skills/ponytail
 
 rm -rf skills/emil-design-eng skills/animate skills/review-animations skills/improve-animations skills/find-animation-opportunities skills/animation-vocabulary skills/apple-design
 
@@ -125,13 +127,12 @@ git diff
 ## Notes
 
 - GSAP skills (`skills/gsap-*`) are vendored from `greensock/gsap-skills`; after syncing, re-apply the display studio additions noted above.
-- `skills/caveman` is vendored from `juliusbrussee/caveman`.
 - `skills/web-design-guidelines` is vendored from `vercel-labs/agent-skills`.
 - `skills/shopify-*` (excluding `shopify-development`) and `skills/ucp` are vendored from `Shopify/Shopify-AI-Toolkit`.
 - For first-party skills, use `metadata.author: display studio`.
 - Keep upstream attribution unchanged for vendored skills.
 - `skills/shopify-development` is a first-party skill maintained by display studio — it is not synced from any vendor.
-- `skills/fuck-slop`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
+- `skills/caveman`, `skills/deslopify`, `skills/grill-me`, and `skills/junior-to-senior` are vendored from `JuliusBrussee/skills`.
 - `skills/emil-design-eng`, `skills/animate`, `skills/review-animations`, `skills/improve-animations`, `skills/find-animation-opportunities`, `skills/animation-vocabulary`, and `skills/apple-design` are vendored from `emilkowalski/skills` (MIT). Not copied: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift` (out of scope).
 - `skills/review-animations`: the upstream `disable-model-invocation` frontmatter field is stripped after copying because `skills-ref validate` rejects it.
 - `skills/motion-conventions` is first-party (display studio) and references the Emil and `gsap-*` skills; it is not synced from any vendor.

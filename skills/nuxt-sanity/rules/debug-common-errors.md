@@ -1,203 +1,151 @@
 # Common Errors and Debug Patterns
 
-## Why it matters
+## Preview does not enable
 
-Integration-layer bugs appear as cryptic CORS errors, undefined data on the server,
-or hydration mismatches — each with a specific root cause and fix.
-This file provides IF/THEN blocks for the most common failure modes.
+Check, in order:
 
----
+1. `sanity.visualEditing.token` and `studioUrl` were available when Nuxt built.
+2. Presentation points to `/preview/enable` and `/preview/disable`.
+3. The enable request succeeds and sets `sanity-preview-id`.
+4. The cookie value equals the private `runtimeConfig.sanity.visualEditing.previewModeId` on the
+   server; cookie presence alone is insufficient.
+5. `/preview/**` and `/_sanity/**` are no-store and not intercepted by page ISR.
 
-## IF: CORS "Allow credentials" error
+Do not log the token or private preview-mode ID.
 
-**Symptom:** Browser console shows `Access-Control-Allow-Origin` or
-`credentialed requests` error when fetching from Sanity.
+## Draft content is missing
 
-**Cause:** Sanity's CORS settings don't include your Nuxt origin with credentials allowed.
+- Confirm the page selected the `useSanityQuery` branch during SSR.
+- Confirm the module is not configured with `minimal: true`.
+- Confirm the Viewer token can read drafts.
+- Inspect `useSanityPerspective()` if the query still resolves to `published`.
+- Confirm the Presentation iframe uses the same application origin that enabled preview.
 
-**Fix:**
-1. Go to Sanity project settings → API → CORS origins
-2. Add your Nuxt app origin (e.g., `http://localhost:3000`, `https://yoursite.com`)
-3. Enable "Allow credentials" for that origin
-4. If using a token, the origin must be in the allowlist with credentials enabled
+## Public content contains stega metadata
 
----
+Public routes must pass `{ stega: false }` and preview data must never flow through the public
+Netlify-cached endpoint. Purge any already-cached contaminated response after fixing the route.
 
-## IF: `data` is `null` on first render (SSR)
+## Hydration mismatch
 
-**Symptom:** `post.value` is null on the server, content appears only after hydration.
+Server and client must choose the same public or preview branch. Base preview authorization on the
+module state established from its validated cookie, not on client-only URL checks or arbitrary
+cookies. Also check that route/locale parameters resolve to identical values during SSR and hydration.
 
-**Causes and fixes:**
+## `useSanity` is undefined in a server route
 
-- Used `useLazySanityQuery` where `useSanityQuery` is needed:
-  ```ts
-  // ❌ useLazySanityQuery skips SSR — data is null on first render
-  const { data } = useLazySanityQuery(query, params)
-  // ✅ useSanityQuery fetches on server and includes data in SSR payload
-  const { data } = await useSanityQuery(query, params)
-  ```
-
-- Missing `<Suspense>` boundary when using lazy queries in a nested component:
-  ```vue
-  <!-- In parent: -->
-  <Suspense>
-    <PostDetail :slug="slug" />
-  </Suspense>
-  ```
-
----
-
-## IF: Hydration mismatch
-
-**Symptom:** Vue hydration warning in the console; content flickers or resets on load.
-
-**Cause:** Server and client fetch different data — typically because draft mode state
-(cookie) is inconsistent between SSR and client.
-
-**Fix:** Ensure the draft mode cookie is read consistently on both server and client:
+`@nuxtjs/sanity` auto-imports `useSanity` for Nitro. If generated imports are stale, run Nuxt prepare
+and confirm the module is enabled. An explicit fallback import is:
 
 ```ts
-// Use useCookie — works identically on server and client
-const isDraft = useCookie('sanity-preview-id')
-const perspective = computed(() => isDraft.value ? 'previewDrafts' : 'published')
-```
-
----
-
-## IF: `useSanity is not defined` in server route
-
-**Symptom:** Runtime error in `server/api/*.ts` — `useSanity` is not a function.
-
-**Cause:** Trying to import `useSanity` directly from the package instead of `#imports`.
-Nuxt auto-imports only work in `pages/`, `components/`, `composables/`, and `app.vue`.
-
-**Fix:**
-```ts
-// ❌
-import { useSanity } from '@nuxtjs/sanity'
-
-// ✅
 import { useSanity } from '#imports'
 ```
 
----
+Do not import the composable directly from the package root.
 
-## IF: Stale data after content update in Sanity Studio
+## `validateSanityQuery` breaks `client.fetch`
 
-**Symptom:** After saving a document in Studio, the Nuxt app still shows old content.
+This is incorrect:
 
-**Cause:** Sanity CDN caches responses for ~60 seconds; `useSanityQuery` cache may also hold stale data.
-
-**Fix options:**
-1. Call `refresh()` on the composable after a known update
-2. Use `clearNuxtData(key)` to invalidate the cache
-3. Set `useCdn: false` in your sanity config to bypass CDN (higher latency)
-4. Set up a Sanity webhook → server route that calls `clearNuxtData`
-
----
-
-## IF: Token appears in client-side network requests or bundle
-
-**Symptom:** Browser DevTools shows `Authorization: Bearer sk...` in requests, or
-token visible in `__nuxt_state` payload.
-
-**Cause:** Token placed in `runtimeConfig.public` or logged in a `<script setup>` block.
-
-**Fix:**
 ```ts
-// nuxt.config.ts — token must be in private runtimeConfig
-runtimeConfig: {
-  sanity: {
-    token: '', // ✅ private — set via NUXT_SANITY_TOKEN env var
-  },
-  // public: { sanityToken: '...' }  // ❌ exposed to browser
-},
+const query = validateSanityQuery(body.query)
+return client.fetch(query) // query is Promise<boolean>
 ```
 
-Never `console.log(useRuntimeConfig().sanity.token)` in components — it will appear in SSR output.
+Validate, then fetch the original allowlisted string:
 
----
+```ts
+await validateSanityQuery(body.query)
+return client.fetch(body.query, body.params ?? {})
+```
 
-## IF: SanityImage renders broken URL or wrong crop
+## CORS failure
 
-**Symptom:** Image URL is missing transform parameters or subject is incorrectly cropped.
+Add only the application and Studio origins that need direct Sanity access. Enable credentials only
+for flows that actually use credentialed browser requests. The standard visual-editing proxy keeps
+the Viewer token server-side, so do not expose a token merely to work around CORS.
 
-**Cause:** GROQ projection missing `hotspot` and `crop` fields.
+## Token appears in browser state or network requests
 
-**Fix:** Include hotspot/crop in every image projection:
+- Remove it from `runtimeConfig.public` and public `sanity.token` configuration.
+- Put the preview token under `sanity.visualEditing.token`.
+- Use a server-only client or plugin for any unrelated authenticated operation.
+- Rotate the leaked token and reduce its permissions; removing it from source does not revoke it.
+
+## Stale content after publish
+
+Do not assume one cache layer. Compare:
+
+1. Sanity live API response.
+2. Sanity API-CDN response.
+3. `/api/sanity/*` JSON response.
+4. Page HTML response.
+5. Nuxt payload/client navigation state.
+
+| Observation | Likely cause |
+|---|---|
+| Live API fresh, Sanity API CDN stale | Sanity propagation race; use live API for freshness-critical regeneration |
+| Sanity fresh, JSON stale | Missing endpoint tag, wrong query variation, or Netlify purge failure |
+| JSON fresh, page stale | Missing page dependency tag or page ISR entry not purged |
+| Reload fresh, navigation stale | Nuxt payload key/reactivity issue or stale JSON cache |
+| Root edit purges, referenced edit does not | Page/JSON omitted the referenced document dependency tags |
+| Webhook returns 202, new Netlify entry is still old | Fresh Netlify cache was repopulated from an upstream stale layer |
+
+See `perf-cdn-caching.md` for header checks and the two Sanity API modes.
+
+## Invalid requests or 404s become sticky
+
+The route applied public cache headers before validation or before checking for null. Call
+`setNoStore(event)` first and `setPublicCdnCache()` only after a successful document result. Page
+errors must call `useNoStore()` before throwing.
+
+## Webhook always returns 401
+
+- Confirm `NUXT_SANITY_WEBHOOK_SECRET` is declared through `runtimeConfig.sanityWebhookSecret` and
+  configured in the deployed environment.
+- Confirm the Sanity webhook uses the same secret and sends `sanity-webhook-signature`.
+- Verify the raw body; parsing and re-serializing it changes the HMAC input.
+- Check clock skew against the explicit five-minute freshness window.
+- Do not remove freshness validation to make an old captured request pass.
+
+If the secret is missing, return 500 rather than misleadingly reporting an invalid signature.
+
+## Webhook returns 202 but a delete remains visible
+
+Ensure the document webhook triggers on delete/unpublish and projects `_id` and `_type`. Purging only
+on update leaves the cached published page visible until TTL expiry.
+
+## Broken `SanityImage` crop
+
+Project `asset`, `hotspot`, and `crop` together:
+
 ```groq
-mainImage{ asset, hotspot, crop, alt }
+mainImage { asset, hotspot, crop, alt }
 ```
 
----
+## GROQ injection concern
 
-## IF: worried about GROQ injection from user input
-
-**Symptom:** none yet — this is a preventive check, not a bug report.
-
-**Cause:** GROQ has no query-string escaping mechanism of its own. If a query is built by
-concatenating unvalidated user input directly into the query string, that string can alter the
-query's meaning (the injection vector) — the same class of bug as SQL injection.
-
-**Fix:** Always pass dynamic values through the `params` object with `$`-prefixed names, never
-via string interpolation into the query text:
+Keep query text static and pass request data as `$parameters`:
 
 ```ts
-// ❌ User input interpolated directly into the query
-const query = `*[_type == "post" && slug.current == "${userSlug}"][0]`
-
-// ✅ User input passed as a parameter
 const query = `*[_type == "post" && slug.current == $slug][0]`
-await client.fetch(query, { slug: userSlug })
+await client.fetch(query, { slug: validatedSlug })
 ```
 
-Every query in this codebase already follows the `$param` pattern — keep it that way for any new
-query, especially ones built from `getQuery(event)`/`readBody(event)` values in server routes.
+GROQ parameters contain JSON values rather than query expressions. Still validate lengths, allowed
+locales, slug characters, and transport shape to control resource use and application behavior.
 
----
+## Quick deployment checks
 
-## IF: Webhook always returns 401
-
-**Symptom:** `POST /api/cache/revalidate` returns 401 on every Sanity document publish; cache
-is never purged.
-
-**Cause:** `NUXT_SANITY_WEBHOOK_SECRET` is not set in the runtime environment. When the env var
-is absent, `useRuntimeConfig().sanityWebhookSecret` resolves to `''` and never matches the
-incoming `x-sanity-webhook-secret` header — so every request is rejected.
-
-**Fix:**
-1. Declare the key in `nuxt.config.ts` runtimeConfig (empty string placeholder):
-   ```ts
-   runtimeConfig: {
-     sanityWebhookSecret: '', // set via NUXT_SANITY_WEBHOOK_SECRET
-   }
-   ```
-2. Add the secret to `.env` (local):
-   ```
-   NUXT_SANITY_WEBHOOK_SECRET=your-secret-here
-   ```
-3. Add a placeholder to `.env.example` so other developers know it is required:
-   ```
-   NUXT_SANITY_WEBHOOK_SECRET=
-   ```
-4. Set the same value in Netlify environment variables (production)
-
----
-
-## Quick troubleshooting checklist
-
-| Symptom | First check |
-|---------|-------------|
-| Preview not entering | Verify `sanity-preview-id` cookie is set; check `NUXT_SANITY_VISUAL_EDITING_STUDIO_URL` |
-| Stale content outside preview | Check `getKey` format, `maxAge`, and that webhook `/api/cache/revalidate` is firing |
-| Search showing no drafts | Expected — search always uses the cached server route, never the preview path |
-| CDN cache fragmentation | Confirm `Vary: Cookie` is absent on `/api/**` responses (check response headers in Netlify logs) |
-| All pages cold after a publish | Verify `useStorage('cache').clear()` is NOT called in `revalidate.ts` — only `purgeCache({ tags })` should run |
-
----
+- Public page: browser revalidation header, targeted `Netlify-Vary`, finite ISR.
+- Public JSON: browser revalidation header, durable Netlify header, cache tags, query variation.
+- Preview: no-store for browser and Netlify, exact cookie validation.
+- Invalid/missing/upstream error: no-store.
+- Webhook: POST only, signed raw body, fresh timestamp, strict `_id`/`_type`, 202 after purge.
+- No `defineCachedEventHandler` in `/api/sanity/*`.
 
 ## Docs
 
 - Module issues: https://github.com/nuxt-modules/sanity/issues
-- Sanity CORS settings: https://www.sanity.io/docs/cors
-- Nuxt hydration: https://nuxt.com/docs/guide/concepts/rendering#universal-rendering
+- Sanity CORS: https://www.sanity.io/docs/cors
+- Nuxt rendering: https://nuxt.com/docs/guide/concepts/rendering

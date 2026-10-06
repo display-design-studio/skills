@@ -43,10 +43,6 @@
 - `seo-aeo-best-practices`
 - `content-experimentation-best-practices`
 
-### Vendored from `juliusbrussee/caveman`
-
-- `caveman`
-
 ### Vendored from `vercel-labs/agent-skills`
 
 - `web-design-guidelines`
@@ -77,7 +73,8 @@
 
 ### Vendored from `JuliusBrussee/skills`
 
-- `fuck-slop`
+- `caveman`
+- `deslopify`
 - `grill-me`
 - `junior-to-senior`
 
@@ -92,6 +89,10 @@ MIT licensed, © Emil Kowalski. Web animation subset only.
 - `find-animation-opportunities`
 - `animation-vocabulary`
 - `apple-design`
+
+### Vendored from `dietrichgebert/ponytail`
+
+- `ponytail`
 
 ## Install (skills CLI)
 
@@ -141,10 +142,9 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 
 - `antfu/skills`: `nuxt`, `vue`, `vite`
 - `sanity-io/agent-toolkit`: `sanity-best-practices`, `content-modeling-best-practices`, `seo-aeo-best-practices`, `content-experimentation-best-practices`
-- `juliusbrussee/caveman`: `caveman`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: see the command above
-- `JuliusBrussee/skills`: `fuck-slop`, `grill-me`, `junior-to-senior`
+- `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
 - `emilkowalski/skills`: `emil-design-eng`, `animate`, `review-animations`, `improve-animations`, `find-animation-opportunities`, `animation-vocabulary`, `apple-design`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:

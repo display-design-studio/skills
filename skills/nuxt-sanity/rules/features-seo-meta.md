@@ -38,6 +38,8 @@ const { data } = await useSanityHome({ lang: locale.value })
 import { defineQuery } from 'groq'
 
 export const homeQuery = defineQuery(`*[_type == "home"][0]{
+  _id,
+  _type,
   title,
   seo {
     title,
@@ -56,7 +58,8 @@ not a bare `useAsyncData` + `$fetch` call:
 ```vue
 <script setup lang="ts">
 const { locale } = useI18n()
-const { data } = await useSanityHome({ lang: locale.value })
+const params = computed(() => ({ lang: locale.value }))
+const { data } = await useSanityHome(params)
 
 if (data.value) {
   useSeoMeta({
@@ -82,7 +85,11 @@ if (data.value) {
 <script setup lang="ts">
 const route = useRoute()
 const { locale } = useI18n()
-const { data } = await useSanityPage({ lang: locale.value, slug: route.params.slug as string })
+const params = computed(() => ({
+  lang: locale.value,
+  slug: route.params.slug as string,
+}))
+const { data } = await useSanityPage(params)
 
 if (data.value) {
   useSeoMeta({

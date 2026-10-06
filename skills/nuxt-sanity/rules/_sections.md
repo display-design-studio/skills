@@ -17,7 +17,7 @@ Start here for any nuxt-sanity task:
 Load when building with the Display Nuxt Starter or adding a new document type:
 
 - `arch-starter-pattern.md` — directory layout, data-flow, GROQ conventions, i18n
-- `arch-extension-pattern.md` — 4-step recipe: GROQ query → endpoint → composable → page
+- `arch-extension-pattern.md` — query, endpoint, composable, page, dependency tags, webhook coverage
 
 ## 2) Features (`features-`)
 
@@ -35,7 +35,7 @@ Load when working with specific integration features:
 Load when dealing with caching or reactive data problems:
 
 - `perf-query-keys-and-caching.md` — stable query keys, reactive params, cache busting
-- `perf-cdn-caching.md` — two-layer CDN caching, preview bypass middleware, cache tagging, webhook invalidation
+- `perf-cdn-caching.md` — browser, Netlify, and Sanity CDN policy; preview isolation and invalidation
 
 ## 4) Debug (`debug-`)
 

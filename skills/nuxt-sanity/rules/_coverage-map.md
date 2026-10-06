@@ -1,75 +1,72 @@
 # Nuxt + Sanity Coverage Map
 
-Module source: https://github.com/nuxt-modules/sanity
-Docs: https://sanity.nuxtjs.org/
+Primary module source: https://github.com/nuxt-modules/sanity
+Module documentation: https://sanity.nuxtjs.org/
 
-## Core
+## Core module integration
 
-- Module installation / config: https://sanity.nuxtjs.org/getting-started/installation
-  → `core-module-setup.md`
-- useSanityQuery, useLazySanityQuery: https://sanity.nuxtjs.org/composables/use-sanity-query
-  → `core-composables.md`
-- useSanity (raw client): https://sanity.nuxtjs.org/composables/use-sanity
-  → `core-composables.md`, `core-server-routes.md`
-- Nitro server usage + validateSanityQuery: https://sanity.nuxtjs.org/server
-  → `core-server-routes.md`
+- Installation and runtime configuration
+  - https://sanity.nuxtjs.org/getting-started/installation
+  - https://sanity.nuxtjs.org/getting-started/configuration
+  - `core-module-setup.md`
+- `useSanityQuery`, `useLazySanityQuery`, and `useSanity`
+  - https://sanity.nuxtjs.org/getting-started/usage
+  - https://sanity.nuxtjs.org/composables/use-sanity-query
+  - `core-composables.md`
+- Nitro server usage and `validateSanityQuery`
+  - https://sanity.nuxtjs.org/server
+  - `core-server-routes.md`
+- Visual editing, native preview routes, token privacy, and live updates
+  - https://sanity.nuxtjs.org/getting-started/visual-editing
+  - `features-visual-editing.md`
 
-## Starter Architecture
+## Display Starter architecture
 
-> Source: Display Nuxt Starter developer guide (Display Studio, internal)
+Source: Display Nuxt Starter, reviewed against its Nuxt 4 and `@nuxtjs/sanity@2.5.0` implementation.
 
-- Directory layout, data-flow (query → endpoint → composable → page)
-  → `arch-starter-pattern.md`
-- GROQ query conventions (`$lang`, `$slug`, `defineQuery`, auto-import)
-  → `arch-starter-pattern.md`
-- i18n conventions (default `en`, `lang` param, `$lang` in GROQ, locale files)
-  → `arch-starter-pattern.md`
-- TypeScript typegen: this starter uses the Sanity CLI's typegen (`studio/` project) via the
-  `#sanity-types` alias, not the module's native `#build/types/sanity-typegen` output
-  → `arch-starter-pattern.md`
-- 4-step recipe: GROQ query → `defineCachedEventHandler` endpoint → preview-switch composable → page
-  → `arch-extension-pattern.md`
-- Slug-parameterised variant (`<type>:<lang>:<slug>` cache key)
-  → `arch-extension-pattern.md`
+- Public server route versus Presentation preview data flow
+- Shared GROQ queries and `#sanity-types` fallback alias
+- Validated locale/slug transport parameters
+- Success-only caching and no-store error paths
+- Reactive `MaybeRef` preview-switch composables
+- Page and JSON dependency tags
+- Signed POST webhook invalidation
 
-## Features
+Covered by `arch-starter-pattern.md` and `arch-extension-pattern.md`.
 
-- SanityImage + @nuxt/image: https://sanity.nuxtjs.org/components/sanity-image
-  → `features-sanity-image.md`
-- Programmatic image URLs (`@sanity/image-url`, no `useSanityImage` composable exists): https://www.sanity.io/docs/image-url
-  → `features-sanity-image.md`
-- SanityContent (Portable Text): https://sanity.nuxtjs.org/components/sanity-content
-  → `features-sanity-content.md`
-- Visual editing / stega: https://sanity.nuxtjs.org/visual-editing
-  → `features-visual-editing.md`
-- Dynamic sitemap sources + defineSitemapEventHandler: https://nuxtseo.com/sitemap/guides/dynamic-urls
-  → `features-sitemap.md`
-- useSeoMeta() with Sanity data (title, description, ogImage): https://nuxt.com/docs/api/composables/use-seo-meta
-  → `features-seo-meta.md`
-- Sitemap i18n locale prefixes (prefix_except_default), stega safety in handlers
-  → `features-sitemap-i18n.md`
+## Cache and consistency
 
-## Performance
+- Netlify targeted cache headers, durable caching, cache variation, tags, and purge
+  - https://docs.netlify.com/build/caching/caching-overview/
+  - https://docs.netlify.com/build/functions/api/#purgecache
+- Sanity API CDN behavior and live-API alternative
+  - https://www.sanity.io/docs/content-lake/api-cdn
+- Sanity webhook authenticity, delivery, retries, delete events, and recovery
+  - https://www.sanity.io/docs/content-lake/webhook-best-practices
+  - https://www.sanity.io/docs/content-lake/webhooks
+  - https://github.com/sanity-io/webhook-toolkit
+- Nuxt async-data keys and client-state clearing
+  - https://nuxt.com/docs/api/composables/use-async-data
+  - https://nuxt.com/docs/api/utils/clear-nuxt-data
 
-- Query key reactivity / caching: https://sanity.nuxtjs.org/composables/use-sanity-query
-  → `perf-query-keys-and-caching.md`
-- Two-layer HTTP/CDN caching (Browser + Netlify), `routeRules`, preview bypass middleware
-  → `perf-cdn-caching.md` (source: Display Nuxt Starter + @netlify/functions)
-- Cache tagging (`Netlify-Cache-Tag`), `useCacheTag` composable, surgical CDN purge
-  → `perf-cdn-caching.md`
-- Webhook-driven cache invalidation (`POST /api/cache/revalidate`), manual purge (`POST /api/cache/purge`)
-  → `perf-cdn-caching.md`
+Covered by `perf-cdn-caching.md`, `perf-query-keys-and-caching.md`, and
+`debug-common-errors.md`.
 
-## Debug
+## Other features
 
-- CORS, auth, hydration: common pitfalls from module issues tracker
-  → `debug-common-errors.md`
+- `SanityImage` and image URL building: `features-sanity-image.md`
+- Portable Text through `SanityContent`: `features-sanity-content.md`
+- Dynamic sitemap sources: `features-sitemap.md`
+- i18n sitemap paths and stega-safe URLs: `features-sitemap-i18n.md`
+- SEO metadata from Sanity: `features-seo-meta.md`
 
-## Notes
+## Maintenance boundaries
 
-- TypeScript typegen is covered by `sanity-best-practices/rules/typegen-workflow.md` —
-  link to it from composables rule rather than duplicating.
-- GROQ query patterns belong in `sanity-best-practices`, not here.
-- Attribution: Display Studio, 2026. Source: @nuxtjs/sanity module docs and GitHub issues.
-- Starter architecture content (arch-* files, perf-cdn-caching.md): Display Studio internal
-  developer guide for the Display Nuxt Starter project, 2026.
+- Keep generic GROQ optimization and schema design in `sanity-best-practices`.
+- Keep generic Nuxt rendering guidance in the `nuxt` skill.
+- Recheck module source when `@nuxtjs/sanity` changes preview, typegen, query-key, or proxy behavior.
+- Recheck Netlify documentation when cache headers, ISR, variation, cache tags, or `purgeCache` change.
+- Treat fixed provider TTLs and observed propagation timing as project choices, not Sanity guarantees.
+
+Attribution: Display Studio, 2026. Starter-specific rules derive from the Display Nuxt Starter;
+portable behavior is grounded in the official sources above.

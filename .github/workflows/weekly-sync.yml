@@ -59,8 +59,9 @@ jobs:
 
       - name: Re-copy vendored skills (JuliusBrussee/skills)
         run: |
-          rm -rf skills/fuck-slop skills/grill-me skills/junior-to-senior
-          cp -R vendor/julius-skills/skills/fuck-slop skills/fuck-slop
+          rm -rf skills/caveman skills/deslopify skills/grill-me skills/junior-to-senior
+          cp -R vendor/julius-skills/skills/caveman skills/caveman
+          cp -R vendor/julius-skills/skills/deslopify skills/deslopify
           cp -R vendor/julius-skills/skills/grill-me skills/grill-me
           cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
 
@@ -134,7 +135,7 @@ jobs:
 
             - `skills/nuxt`, `skills/vue`, `skills/vite` (from `antfu/skills`)
             - `skills/sanity-best-practices`, `skills/content-modeling-best-practices`, `skills/seo-aeo-best-practices`, `skills/content-experimentation-best-practices` (from `sanity-io/agent-toolkit`)
-            - `skills/fuck-slop`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
+            - `skills/caveman`, `skills/deslopify`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
             - `skills/emil-design-eng`, `skills/animate`, `skills/review-animations`, `skills/improve-animations`, `skills/find-animation-opportunities`, `skills/animation-vocabulary`, `skills/apple-design` (from `emilkowalski/skills`)
 
             ### Validation
