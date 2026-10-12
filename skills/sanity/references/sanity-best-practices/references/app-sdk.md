@@ -7,17 +7,19 @@ description: Rules for building custom applications with the Sanity App SDK, inc
 
 Build custom React applications that interact with Sanity content in real-time.
 
+**If `sanity.cli.ts` uses `defineApplication`, also load the `dashboard` rule.** It covers config, local development, deploys, and Dashboard hooks for apps in the Sanity Dashboard beta, and takes precedence over the Configuration and Commands sections below.
+
 ## Tech Stack
 
 - **Framework:** React 19+, TypeScript
-- **Packages:** `@sanity/sdk`, `@sanity/sdk-react`
-- **Optional UI:** `@sanity/ui`, `styled-components`
-- **Runtime:** Node.js 20+
+- **Packages:** `@sanity/sdk`, `@sanity/sdk-react` v3 (v2 cannot sign in through the Dashboard)
+- **Optional UI:** `@sanity/ui` v4, `styled-components`
+- **Runtime:** Node.js 22.12+ (required by the current Sanity CLI)
 
 ## Commands
 
 ```bash
-# Basic quickstart
+# Basic quickstart (add --dashboard for the Dashboard beta, see the `dashboard` rule)
 npx sanity@latest init --template app-quickstart --organization <your-org-id> --output-path . --typescript --skip-mcp
 
 # With Sanity UI components
@@ -30,7 +32,7 @@ npm run dev
 npx sanity@latest deploy
 
 # Install Sanity UI
-npm install @sanity/ui styled-components
+npm install @sanity/ui@^4 styled-components
 ```
 
 ## Project Structure
@@ -55,12 +57,15 @@ my-app/
 - **Never:** Use `useState` for form values that should sync with Content Lake
 - **Never:** Use array index as React `key` for document lists (breaks real-time updates)
 - **Never:** Forget the `fallback` prop on `<SanityApp>` and `<Suspense>` boundaries
+- **Never:** Import Dashboard hooks (`useNavigate`, `useNavigateToStudioDocument`, `useOrganizationId`) from `@sanity/sdk-react`; they live in `@sanity/sdk-react/dashboard`
 
 ---
 
 ## Configuration
 
 ### CLI Config (`sanity.cli.ts`)
+
+The classic app config, without `defineApplication`. For Dashboard beta apps and for `app.visibility`, see the `dashboard` rule.
 
 ```typescript
 import { defineCliConfig } from 'sanity/cli'
@@ -96,10 +101,14 @@ export default function App() {
 
 ### With Sanity UI
 
+Sanity UI v4 needs its stylesheet imported once, and `ToastProvider` comes from `@sanity/ui/toast`:
+
 ```typescript
+import '@sanity/ui/styles.css'
 import { SanityApp, type SanityConfig } from '@sanity/sdk-react'
 import { ThemeProvider } from '@sanity/ui'
 import { buildTheme } from '@sanity/ui/theme'
+import { ToastProvider } from '@sanity/ui/toast'
 
 const theme = buildTheme()
 
@@ -110,9 +119,11 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <SanityApp config={config} fallback={<div>Loading...</div>}>
-        <YourComponents />
-      </SanityApp>
+      <ToastProvider>
+        <SanityApp config={config} fallback={<div>Loading...</div>}>
+          <YourComponents />
+        </SanityApp>
+      </ToastProvider>
     </ThemeProvider>
   )
 }
@@ -358,6 +369,8 @@ function BadComponent() {
 
 ```typescript
 // Good: Fallback matches final component dimensions
+import { useNavigateToStudioDocument } from '@sanity/sdk-react/dashboard'
+
 const BUTTON_TEXT = 'Open in Studio'
 
 export function OpenInStudio({ handle }: { handle: DocumentHandle }) {
@@ -458,5 +471,5 @@ The App SDK provides hooks and data stores. You bring:
 | Issue | Solution |
 |-------|----------|
 | Safari dev issues | Use Chrome or Firefox during development |
-| Port 3333 in use | `npm run dev -- --port 3334` |
+| Port 3333 in use | `npm run dev -- --port 3335` (a Dashboard app also takes the next port for the app itself) |
 | Auth errors | `npx sanity@latest logout && npx sanity@latest login` |
