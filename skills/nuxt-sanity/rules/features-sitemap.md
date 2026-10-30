@@ -13,9 +13,10 @@ sitemap: {
 ```
 
 The sitemap module owns this 24-hour cache, so repeated sitemap requests do not repeatedly query
-Sanity. Route changes can take up to 24 hours to appear until sitemap-specific webhook invalidation is
-implemented. Do not place a second endpoint cache in front of it unless both layers participate in the
-same invalidation strategy.
+Sanity. Refresh is request-driven and can involve module SWR and downstream caches, so 24 hours is
+not a strict publication-to-visibility bound. The current starter excludes sitemap XML/index routes
+from long-lived page retention and does not invalidate them through document webhooks. Do not add
+another endpoint cache unless every layer participates in the same invalidation strategy.
 
 ## Handler
 
@@ -33,7 +34,7 @@ interface SitemapPage {
 const localePrefixes = { en: '', it: '/it' } as const
 
 export default defineSitemapEventHandler(async () => {
-  const sanity = useSanity()
+  const sanity = useSanity().client.withConfig({ useCdn: false, perspective: 'published' })
   let pages: SitemapPage[]
 
   try {
@@ -68,6 +69,9 @@ export default defineSitemapEventHandler(async () => {
 The locale-prefix map must follow the application's actual i18n strategy. For the Display Starter's
 `prefix_except_default` policy, English has no prefix and non-default locales do. See
 `features-sitemap-i18n.md` for the concrete implementation.
+
+The generic example above assumes separate-language documents. The Display Starter has localized
+slug objects without a `language` field; use `features-sitemap-i18n.md` for that data model.
 
 Even with `{ stega: false }`, `stegaClean()` is a cheap defensive boundary before a Sanity string is
 inserted into a URL. Also reject missing, unsupported, or path-breaking locale/slug values rather than

@@ -61,10 +61,10 @@ published result.
 import type { PageQueryResult } from '#sanity-types'
 
 export default defineEventHandler(async (event) => {
-  setNoStore(event)
+  setNoStore(event, { provisional: true })
   const lang = getSanityLocale(event)
   const slug = getSanitySlug(event)
-  const sanity = useSanity()
+  const sanity = useSanity(event).client.withConfig({ useCdn: false, perspective: 'published' })
   let result: PageQueryResult
 
   try {
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
   if (!result)
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
 
-  setPublicCdnCache(event, [result._id, result._type])
+  setPublicCdnCache(event, getPageCacheTags(result))
   return result
 })
 ```
@@ -91,8 +91,8 @@ export default defineEventHandler(async (event) => {
 
 ```http
 Cache-Control: public, max-age=0, must-revalidate
-Netlify-CDN-Cache-Control: public, durable, max-age=86400, stale-while-revalidate=3600
-Netlify-Cache-Tag: <document-id>,<document-type>
+Netlify-CDN-Cache-Control: public, durable, max-age=31536000, must-revalidate
+Netlify-Cache-Tag: doc:<document-id>
 ```
 
 Do not use `defineCachedEventHandler` for these endpoints on serverless. Its storage is a separate
@@ -107,8 +107,10 @@ const liveClient = sanity.client.withConfig({ useCdn: false })
 const result = await liveClient.fetch(pageQuery, { lang, slug }, { stega: false })
 ```
 
-Keep `useCdn: true` for the starter's scale-first default and accept the propagation tradeoff
-documented in `perf-cdn-caching.md`.
+The module-wide `useCdn: true` default remains unchanged; current starter public handlers use
+derived live clients so regeneration does not refill long-lived caches from stale API-CDN data.
+Only provisional no-store may be promoted to public caching. Final error/preview/overflow decisions
+are sticky. The current helper contract and webhook payload are in `arch-on-demand-cache.md`.
 
 ## Private dataset proxy
 
