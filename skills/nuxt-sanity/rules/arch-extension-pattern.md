@@ -11,15 +11,20 @@ whose content is rendered.
 ```ts
 // shared/utils/articleQuery.ts
 import { defineQuery } from 'groq'
+import { getDocumentCacheTags } from './cacheDependencies'
 
 export const articleQuery = defineQuery(`
-  *[_type == "article" && language == $lang && slug[$lang].current == $slug][0] {
-    ...,
+  *[_type == "article" && slug[$lang].current == $slug][0] {
     _id,
     _type,
+    "title": title[$lang],
     author->{ _id, _type, name }
   }
 `)
+
+export function getArticleCacheTags(article: { _id: string, author?: { _id: string } | null }) {
+  return getDocumentCacheTags(article.author ? [article, article.author] : [article])
+}
 ```
 
 ## 2. Add the published endpoint
@@ -32,10 +37,10 @@ successful published result.
 import type { ArticleQueryResult } from '#sanity-types'
 
 export default defineEventHandler(async (event) => {
-  setNoStore(event)
+  setNoStore(event, { provisional: true })
   const lang = getSanityLocale(event)
   const slug = getSanitySlug(event)
-  const sanity = useSanity()
+  const sanity = useSanity(event).client.withConfig({ useCdn: false, perspective: 'published' })
   let article: ArticleQueryResult
 
   try {
@@ -53,19 +58,15 @@ export default defineEventHandler(async (event) => {
   if (!article)
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
 
-  setPublicCdnCache(event, [
-    article._id,
-    article._type,
-    article.author?._id,
-    article.author?._type,
-  ].filter((tag): tag is string => Boolean(tag)))
+  setPublicCdnCache(event, getArticleCacheTags(article))
 
   return article
 })
 ```
 
 Do not wrap the endpoint in `defineCachedEventHandler`. If a listing result has no single root
-document, tag it with the listed document IDs and the relevant listing type.
+document, tag it with the listed document IDs and a static `collection:article` dependency, including
+when the listing is empty. Final no-store cannot be overridden; only the initial provisional value can.
 
 ## 3. Add the preview-switch composable
 
@@ -127,12 +128,7 @@ if (error.value || !article.value) {
   })
 }
 
-useCacheTag([
-  article.value._id,
-  article.value._type,
-  article.value.author?._id,
-  article.value.author?._type,
-].filter((tag): tag is string => Boolean(tag)))
+useCacheTag(getArticleCacheTags(article.value))
 </script>
 ```
 
@@ -141,18 +137,19 @@ when the list is non-trivial so the two call sites cannot drift.
 
 ## 5. Verify webhook coverage
 
-The base webhook purges the changed `_id` and `_type`; no per-document-type switch is needed. Ensure
+The webhook derives `doc:<id>` and, when necessary, `collection:<type>` from its signed body. Ensure
 the Sanity webhook:
 
 - uses POST and the signed secret configured by `NUXT_SANITY_WEBHOOK_SECRET`;
 - triggers on create, update, and delete/unpublish for published documents;
 - does not trigger for drafts or release versions unless intentionally required;
-- projects `{ _id, _type }`;
+- projects `_id`/`_type` with before/after fallback, plus optional signed `operation` and
+  `collectionChanged` metadata aligned with the actual query's membership/order fields;
 - targets `/api/cache/revalidate`.
 
-Reference changes work because responses that render the reference carry its ID/type tags. If the
-query cannot expose precise dependency IDs, a broader type tag is an acceptable fallback, but it
-purges more pages and should be documented as such.
+Reference changes work because responses carry rendered reference IDs. See `arch-on-demand-cache.md`
+for the exact webhook projection and conservative legacy fallback. Do not attach collection tags to
+unrelated details; keep collection dependencies on listings and query lookups that need them.
 
 ## 6. Verify behavior
 
@@ -164,4 +161,4 @@ purges more pages and should be documented as such.
 6. Delete/unpublish the root document and confirm the next request returns an uncached 404.
 
 Update the project architecture documentation with the endpoint, parameters, tags, and any choice to
-use the live Sanity API instead of the API CDN.
+extend the shared dependency selector or signed collection classifier.

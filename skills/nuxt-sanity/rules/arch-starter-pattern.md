@@ -32,19 +32,20 @@ document dependency tags so one webhook purge invalidates initial SSR and client
 | Layer | Starter behavior |
 |---|---|
 | Browser | May store the response but must revalidate before reuse (`max-age=0`) |
-| Netlify page HTML | ISR, 24-hour finite backstop, tagged |
-| Netlify `/api/sanity/*` JSON | Durable 24-hour cache plus 1-hour SWR, tagged |
-| Sanity API CDN | Enabled for anonymous published reads |
+| Netlify page HTML | Boolean ISR, installed adapter's one-year bound, dependency-tagged |
+| Netlify `/api/sanity/*` JSON | Matching one-year durable retention, must-revalidate, dependency-tagged |
+| Sanity origin | Derived anonymous live published client, `useCdn: false` |
 | Preview | No-store throughout; Sanity API CDN bypassed by the module |
 
-There is no `defineCachedEventHandler` layer in front of Sanity. See `perf-cdn-caching.md`.
+There is no `defineCachedEventHandler` layer in front of Sanity. See `arch-on-demand-cache.md`
+for document/collection selectors, signed classification, missed-webhook recovery and sitemap policy.
 
 ## GROQ query conventions
 
 - Export queries from `shared/utils/` with `defineQuery`.
 - Import `defineQuery` explicitly from `groq`.
 - Pass request values as `$parameters`; never interpolate them into query text.
-- Project `_id` and `_type` for cache tagging.
+- Project `_id` and `_type`; build namespaced dependency tags with shared selectors.
 - Project IDs/types of referenced documents whose fields are rendered so those dependencies can be
   tagged too.
 
@@ -52,7 +53,7 @@ There is no `defineCachedEventHandler` layer in front of Sanity. See `perf-cdn-c
 import { defineQuery } from 'groq'
 
 export const pageQuery = defineQuery(`
-  *[_type == "page" && language == $lang && slug[$lang].current == $slug][0] {
+  *[_type == "page" && slug[$lang].current == $slug][0] {
     ...,
     _id,
     _type,
@@ -64,7 +65,8 @@ export const pageQuery = defineQuery(`
 ## i18n conventions
 
 The starter uses `prefix_except_default`, default locale `en`, URL query parameter `lang`, and GROQ
-parameter `$lang`. `SUPPORTED_LOCALES` in the server validator must match the Nuxt i18n locale list.
+parameter `$lang`. Localized fields and slugs are keyed by locale; do not assume a document-level
+`language` field. Derive validation and Nuxt i18n configuration from `shared/utils/locales.ts`.
 Reject unsupported or array-valued locale parameters rather than falling back silently.
 
 ## Type generation
@@ -82,7 +84,7 @@ Do not document both mechanisms as simultaneously required.
 
 ## Response invariants
 
-- Set no-store before parsing or fetching.
+- Set provisional no-store before parsing or fetching with `setNoStore(event, { provisional: true })`.
 - Validate every request parameter.
 - Return 400 for invalid input, 404 for missing content, and 502 for an upstream Sanity failure.
 - Enable public CDN headers only after a valid document was fetched.

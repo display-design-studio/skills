@@ -43,10 +43,14 @@ editing, TypeScript, and Nitro server routes.
 → Read `rules/features-visual-editing.md`
 
 **IF following the Display Starter architecture or adding a new document type:**
-→ Read `rules/arch-starter-pattern.md` then `rules/arch-extension-pattern.md`
+→ Read `rules/arch-starter-pattern.md`, `rules/arch-on-demand-cache.md`, then `rules/arch-extension-pattern.md`
 
 **IF configuring CDN caching, cache tags, or webhook cache invalidation:**
 → Read `rules/perf-cdn-caching.md`
+
+**IF reviewing or adopting dependency-based on-demand caching:**
+→ Also read `rules/arch-on-demand-cache.md`. Inspect the target checkout before choosing
+raw ID/type tags versus namespaced dependencies; these contracts cannot be mixed.
 
 **IF experiencing stale CDN content after a Sanity publish (not query-level cache):**
 → Read `rules/perf-cdn-caching.md` — start from "Diagnostics" and compare the live Sanity API,
@@ -80,6 +84,7 @@ editing, TypeScript, and Nitro server routes.
 | Composables | useSanityQuery, useLazySanityQuery, useSanity usage, preview-switch pattern | [rules/core-composables.md](rules/core-composables.md) |
 | Server routes | Nitro server routes with useSanity, validateSanityQuery | [rules/core-server-routes.md](rules/core-server-routes.md) |
 | Starter architecture | Directory layout, data-flow, GROQ conventions, i18n | [rules/arch-starter-pattern.md](rules/arch-starter-pattern.md) |
+| On-demand dependencies | Current starter retention, document/collection selectors, signed webhook payload | [rules/arch-on-demand-cache.md](rules/arch-on-demand-cache.md) |
 | Extension pattern | Connected query, endpoint, composable, page, dependency-tag, and webhook recipe | [rules/arch-extension-pattern.md](rules/arch-extension-pattern.md) |
 | CDN caching | Browser, Netlify, and Sanity CDN policy; preview bypass and webhook invalidation | [rules/perf-cdn-caching.md](rules/perf-cdn-caching.md) |
 | SanityImage | SanityImage component, `@sanity/image-url` builder, @nuxt/image integration | [rules/features-sanity-image.md](rules/features-sanity-image.md) |

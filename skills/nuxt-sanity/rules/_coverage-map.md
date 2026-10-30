@@ -32,7 +32,7 @@ Source: Display Nuxt Starter, reviewed against its Nuxt 4 and `@nuxtjs/sanity@2.
 - Page and JSON dependency tags
 - Signed POST webhook invalidation
 
-Covered by `arch-starter-pattern.md` and `arch-extension-pattern.md`.
+Covered by `arch-starter-pattern.md`, `arch-on-demand-cache.md` and `arch-extension-pattern.md`.
 
 ## Cache and consistency
 
