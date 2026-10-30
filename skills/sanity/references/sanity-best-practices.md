@@ -16,6 +16,7 @@ Reference these guidelines when:
 - Implementing localization
 - Migrating content from other systems
 - Building custom apps with the Sanity App SDK
+- Developing or deploying a Studio or app in the Sanity Dashboard
 - Managing infrastructure with Blueprints
 - Automating content workflows with Sanity Functions or webhooks
 
@@ -46,6 +47,7 @@ Reference these guidelines when:
 - `hydrogen` - Shopify Hydrogen with Sanity
 - `project-structure` - Standalone Studio and monorepo patterns
 - `app-sdk` - Custom applications with Sanity App SDK
+- `dashboard` - Studios and apps in the Sanity Dashboard: defineApplication, local dev, deploys, Dashboard hooks
 - `blueprints` - Infrastructure as Code: blueprint files, stacks, plan/deploy workflow, error recovery, CI deploys
 - `functions` - Automating content workflows with Sanity Functions and webhooks
 

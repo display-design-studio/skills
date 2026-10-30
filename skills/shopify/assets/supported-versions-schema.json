@@ -1,12 +1,15 @@
 {
   "shopifyql": [
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
@@ -23,21 +26,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "storefront-graphql": [
@@ -45,21 +48,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "partner": [
@@ -67,20 +70,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-07",
+      "name": "2027-01",
+      "releaseCandidate": true
+    },
+    {
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
-    },
-    {
-      "name": "2025-07"
     }
   ],
   "customer": [
@@ -88,21 +92,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "payments-apps": [
@@ -110,31 +114,34 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "polaris-app-home": [
     {
-      "name": "v1.1",
+      "name": "v2.0",
       "releaseCandidate": true
     },
     {
-      "name": "v1.0",
+      "name": "v1.1",
       "latestVersion": true
+    },
+    {
+      "name": "v1.0"
     }
   ],
   "polaris-admin-extensions": [
@@ -161,6 +168,10 @@
   ],
   "polaris-checkout-extensions": [
     {
+      "name": "2026-10",
+      "releaseCandidate": true
+    },
+    {
       "name": "2026-07",
       "latestVersion": true
     },
@@ -178,6 +189,10 @@
     }
   ],
   "polaris-customer-account-extensions": [
+    {
+      "name": "2026-10",
+      "releaseCandidate": true
+    },
     {
       "name": "2026-07",
       "latestVersion": true
@@ -197,6 +212,10 @@
   ],
   "pos-ui": [
     {
+      "name": "2026-10",
+      "releaseCandidate": true
+    },
+    {
       "name": "2026-07",
       "latestVersion": true
     },
@@ -215,8 +234,11 @@
   ],
   "hydrogen": [
     {
-      "name": "2026-04",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-04"
     },
     {
       "name": "2026-01"
@@ -234,21 +256,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_cart_transform": [
@@ -256,21 +278,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_delivery_customization": [
@@ -278,21 +300,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_discount": [
@@ -300,27 +322,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
-    }
-  ],
-  "functions_discounts_allocator": [
-    {
-      "name": "unstable",
-      "latestVersion": true
     }
   ],
   "functions_fulfillment_constraints": [
@@ -328,21 +344,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_local_pickup_delivery_option_generator": [
@@ -356,21 +372,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_order_routing_location_rule": [
@@ -378,21 +394,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_payment_customization": [
@@ -400,21 +416,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_pickup_point_delivery_option_generator": [
@@ -428,21 +444,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ],
   "functions_shipping_discounts": [
@@ -450,21 +466,21 @@
       "name": "unstable"
     },
     {
-      "name": "2026-10",
+      "name": "2027-01",
       "releaseCandidate": true
     },
     {
-      "name": "2026-07",
+      "name": "2026-10",
       "latestVersion": true
+    },
+    {
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
     },
     {
       "name": "2026-01"
-    },
-    {
-      "name": "2025-10"
     }
   ]
 }
