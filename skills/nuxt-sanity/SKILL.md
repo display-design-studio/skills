@@ -48,6 +48,10 @@ editing, TypeScript, and Nitro server routes.
 **IF configuring CDN caching, cache tags, or webhook cache invalidation:**
 → Read `rules/perf-cdn-caching.md`
 
+**IF reviewing or adopting dependency-based on-demand caching:**
+→ Also read `rules/arch-on-demand-cache.md`. Inspect the target checkout before choosing
+raw ID/type tags versus namespaced dependencies; these contracts cannot be mixed.
+
 **IF experiencing stale CDN content after a Sanity publish (not query-level cache):**
 → Read `rules/perf-cdn-caching.md` — start from "Diagnostics" and compare the live Sanity API,
   Sanity API CDN, Netlify JSON, page HTML, and Nuxt payload separately

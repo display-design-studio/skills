@@ -52,7 +52,7 @@ There is no `defineCachedEventHandler` layer in front of Sanity. See `perf-cdn-c
 import { defineQuery } from 'groq'
 
 export const pageQuery = defineQuery(`
-  *[_type == "page" && language == $lang && slug[$lang].current == $slug][0] {
+  *[_type == "page" && slug[$lang].current == $slug][0] {
     ...,
     _id,
     _type,
@@ -64,7 +64,8 @@ export const pageQuery = defineQuery(`
 ## i18n conventions
 
 The starter uses `prefix_except_default`, default locale `en`, URL query parameter `lang`, and GROQ
-parameter `$lang`. `SUPPORTED_LOCALES` in the server validator must match the Nuxt i18n locale list.
+parameter `$lang`. Localized fields and slugs are keyed by locale; do not assume a document-level
+`language` field. Derive validation and Nuxt i18n configuration from `shared/utils/locales.ts`.
 Reject unsupported or array-valued locale parameters rather than falling back silently.
 
 ## Type generation
