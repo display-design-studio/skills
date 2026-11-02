@@ -1,0 +1,109 @@
+{
+  "__metadata": {
+    "version": 0.1
+  },
+  "root": {
+    "steps": [
+      {
+        "step_id": "order_created",
+        "task_id": "shopify::admin::order_created",
+        "task_version": "0.1",
+        "task_type": "TRIGGER",
+        "config_field_values": []
+      },
+      {
+        "step_id": "begin_order_edit",
+        "task_id": "shopify::admin::admin_api_operation",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "api_call",
+            "value": "{\"name\":\"orderEditBegin\",\"blob\":\"{\\\"id\\\":\\\"{{ order.id }}\\\"}\"}"
+          }
+        ]
+      },
+      {
+        "step_id": "add_shipping_line",
+        "task_id": "shopify::admin::admin_api_operation",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "api_call",
+            "value": "{\"name\":\"orderEditAddShippingLine\",\"blob\":\"{\\\"id\\\":\\\"{{ sendAdminApiRequest.calculatedOrder.id }}\\\",\\\"shippingLine\\\":{\\\"price\\\":{\\\"amount\\\":9.99,\\\"currencyCode\\\":\\\"{{ order.currencyCode }}\\\"},\\\"title\\\":\\\"Express Shipping\\\"}}\"}"
+          }
+        ]
+      },
+      {
+        "step_id": "each_calculated_line_item",
+        "task_id": "shopify::flow::foreach",
+        "task_version": "0.1",
+        "task_type": "FOREACH",
+        "config_field_values": [
+          {
+            "config_field_id": "listpath",
+            "value": "sendAdminApiRequest.calculatedOrder.lineItems"
+          }
+        ]
+      },
+      {
+        "step_id": "discount_calculated_line_item",
+        "task_id": "shopify::admin::admin_api_operation",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "api_call",
+            "value": "{\"name\":\"orderEditAddLineItemDiscount\",\"blob\":\"{\\\"id\\\":\\\"{{ sendAdminApiRequest.calculatedOrder.id }}\\\",\\\"lineItemId\\\":\\\"{{ lineItemsForeachitem.id }}\\\",\\\"discount\\\":{\\\"percentValue\\\":10,\\\"description\\\":\\\"Loyalty discount\\\"}}\"}"
+          }
+        ]
+      },
+      {
+        "step_id": "commit_order_edit",
+        "task_id": "shopify::admin::admin_api_operation",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "api_call",
+            "value": "{\"name\":\"orderEditCommit\",\"blob\":\"{\\\"id\\\":\\\"{{ sendAdminApiRequest.calculatedOrder.id }}\\\",\\\"notifyCustomer\\\":false}\"}"
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from_step_id": "order_created",
+        "from_port_id": "output",
+        "to_step_id": "begin_order_edit",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "begin_order_edit",
+        "from_port_id": "output",
+        "to_step_id": "add_shipping_line",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "add_shipping_line",
+        "from_port_id": "output",
+        "to_step_id": "each_calculated_line_item",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "each_calculated_line_item",
+        "from_port_id": "loop_body",
+        "to_step_id": "discount_calculated_line_item",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "each_calculated_line_item",
+        "from_port_id": "after",
+        "to_step_id": "commit_order_edit",
+        "to_port_id": "input"
+      }
+    ],
+    "patched_fields": []
+  }
+}

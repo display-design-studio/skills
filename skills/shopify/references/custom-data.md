@@ -191,4 +191,5 @@ Docs: [Metafields & Metaobjects](https://shopify.dev/docs/apps/build/custom-data
 ### Always use Shopify CLI
 
 - **CLI:** ALWAYS use Shopify CLI to scaffold apps and extensions. Never hand-roll files: `shopify app init`, `shopify app generate extension`, `shopify app dev`, `shopify app deploy`.
+- After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
 - For CLI installation, setup, upgrade, or troubleshooting, use `use-shopify-cli`.

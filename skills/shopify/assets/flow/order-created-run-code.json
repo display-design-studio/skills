@@ -1,0 +1,89 @@
+{
+  "__metadata": {
+    "version": 0.1
+  },
+  "root": {
+    "steps": [
+      {
+        "step_id": "order_created",
+        "task_id": "shopify::admin::order_created",
+        "task_version": "0.1",
+        "task_type": "TRIGGER",
+        "config_field_values": []
+      },
+      {
+        "step_id": "total_fragile_items",
+        "task_id": "shopify::flow::run_code",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "input",
+            "value": "query {\n  order {\n    lineItems {\n      quantity\n      originalUnitPriceSet {\n        shopMoney {\n          amount\n        }\n      }\n      product {\n        tags\n      }\n    }\n  }\n}"
+          },
+          {
+            "config_field_id": "script",
+            "value": "export default function main(input) {\n  const fragileTotal = input.order.lineItems\n    .filter(item => item.product?.tags.some(tag => tag.toLowerCase() === \"fragile\"))\n    .reduce((total, item) => total + item.quantity * Number(item.originalUnitPriceSet.shopMoney.amount), 0);\n  return { fragileTotal };\n}"
+          },
+          {
+            "config_field_id": "output_schema",
+            "value": "type Output {\n  fragileTotal: Float!\n}"
+          }
+        ]
+      },
+      {
+        "step_id": "has_high_value_fragile_items",
+        "task_id": "shopify::flow::condition",
+        "task_version": "0.1",
+        "task_type": "CONDITION",
+        "config_field_values": [
+          {
+            "config_field_id": "condition",
+            "value": "(runCode.fragileTotal > 200)"
+          }
+        ]
+      },
+      {
+        "step_id": "email_fragile_order",
+        "task_id": "shopify::flow::send_email",
+        "task_version": "2.0",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "address",
+            "value": "staff@example.com"
+          },
+          {
+            "config_field_id": "subject",
+            "value": "High-value fragile shipment {{ order.name }}"
+          },
+          {
+            "config_field_id": "message",
+            "value": "The original total for fragile-tagged items in order {{ order.name }} is {{ runCode.fragileTotal }} {{ order.currencyCode }}."
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from_step_id": "order_created",
+        "from_port_id": "output",
+        "to_step_id": "total_fragile_items",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "total_fragile_items",
+        "from_port_id": "output",
+        "to_step_id": "has_high_value_fragile_items",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "has_high_value_fragile_items",
+        "from_port_id": "true",
+        "to_step_id": "email_fragile_order",
+        "to_port_id": "input"
+      }
+    ],
+    "patched_fields": []
+  }
+}

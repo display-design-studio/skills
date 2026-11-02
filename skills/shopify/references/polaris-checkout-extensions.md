@@ -18,6 +18,8 @@ Do not include HTML comments (`<!-- ... -->`) in the code — the validator trea
 
 Shopify CLI generates templates that aligns with the latest available version and is not prone to errors. ALWAYS use the CLI Command to Scaffold a new Checkout UI extension
 
+After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
+
 CLI Command to Scaffold a new Checkout UI Extension:
 
 ```bash

@@ -16,7 +16,7 @@ Admin actions are a UI extension that you can use to create transactional workfl
 
 ## Scope and deployment boundary
 
-This guidance only scaffolds and edits Admin UI extension source code to meet the developer's request. It does not deploy or run the extension, access Shopify Admin, or interact with merchant data. The developer must explicitly deploy the app and install or update the extension before it can run in Shopify Admin. Any merchant-data access at runtime remains subject to the app's configured scopes, Shopify's authorization checks, and merchant approval.
+This guidance scaffolds and edits Admin UI extension source code and supports development-store previews. It does not deploy app releases, access Shopify Admin, or interact with merchant data. Outside a development preview, the developer must explicitly deploy the app and install or update the extension before it can run in Shopify Admin. Any merchant-data access at runtime remains subject to the app's configured scopes, Shopify's authorization checks, and merchant approval.
 
 ## Validator constraints
 
@@ -25,6 +25,8 @@ Do not include HTML comments (`<!-- ... -->`) in the code — the validator trea
 ## IMPORTANT : ALWAYS USE THE CLI TO SCAFFOLD A NEW EXTENSION
 
 Shopify CLI generates templates that aligns with the latest available version and is not prone to errors. ALWAYS use the CLI Command to Scaffold a new Admin UI extension
+
+After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
 
 CLI Command to Scaffold a new Admin Action Extension
 
@@ -209,5 +211,4 @@ Refer to the developer documentation to find all valid values for a prop. Ensure
 <s-select disabled name="status" value="active" details="Pick status" error="Required" label="Status" labelAccessibilityVisibility="exclusive" placeholder="Select status" required icon="product"><s-option-group disabled label="States"><s-option value="active" disabled selected defaultSelected>Active</s-option><s-option value="draft">Draft</s-option></s-option-group></s-select>
 <s-spinner accessibilityLabel="Loading products" size="base"></s-spinner>
 <s-stack direction="inline" justifyContent="space-between" alignItems="center" alignContent="start" gap="base" rowGap="large" columnGap="base" padding="base" background="subdued"><s-text>Item 1</s-text><s-text>Item 2</s-text></s-stack>
-<s-switch accessibilityLabel="Toggle" checked defaultChecked details="Enable feature" error="Required" label="Active" required name="active" disabled value="on" labelAccessibilityVisibility="exclusive"></s-switch>
 ```

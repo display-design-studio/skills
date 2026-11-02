@@ -134,11 +134,10 @@
   "polaris-app-home": [
     {
       "name": "v2.0",
-      "releaseCandidate": true
+      "latestVersion": true
     },
     {
-      "name": "v1.1",
-      "latestVersion": true
+      "name": "v1.1"
     },
     {
       "name": "v1.0"
@@ -147,11 +146,10 @@
   "polaris-admin-extensions": [
     {
       "name": "2026-10",
-      "releaseCandidate": true
+      "latestVersion": true
     },
     {
-      "name": "2026-07",
-      "latestVersion": true
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
@@ -169,11 +167,10 @@
   "polaris-checkout-extensions": [
     {
       "name": "2026-10",
-      "releaseCandidate": true
+      "latestVersion": true
     },
     {
-      "name": "2026-07",
-      "latestVersion": true
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
@@ -191,11 +188,10 @@
   "polaris-customer-account-extensions": [
     {
       "name": "2026-10",
-      "releaseCandidate": true
+      "latestVersion": true
     },
     {
-      "name": "2026-07",
-      "latestVersion": true
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
@@ -213,11 +209,10 @@
   "pos-ui": [
     {
       "name": "2026-10",
-      "releaseCandidate": true
+      "latestVersion": true
     },
     {
-      "name": "2026-07",
-      "latestVersion": true
+      "name": "2026-07"
     },
     {
       "name": "2026-04"
