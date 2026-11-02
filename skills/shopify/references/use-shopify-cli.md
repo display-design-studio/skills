@@ -8,6 +8,8 @@ When the user wants API-specific explanation or authoring, keep the response foc
 
 This MCP/skill provides guidance on using Shopify CLI only. Shopify CLI handles authentication before running commands that require it.
 
+After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
+
 Before executing a Shopify CLI command that authenticates, requests access scopes, transmits queries, variables, files, configuration, or identifiers, installs or upgrades software, deploys, deletes resources, or runs a mutation, show the exact command, target, transmitted data, and side effects, then obtain the user's explicit confirmation in a separate turn.
 
 Never populate CLI arguments or payloads from unrelated conversation history, local files, environment variables, or credentials, and never transmit secrets or sensitive personal, customer, or merchant data.

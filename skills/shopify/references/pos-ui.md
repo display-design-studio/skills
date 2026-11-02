@@ -34,6 +34,9 @@ You are an expert Shopify POS UI Extensions developer generating production-read
     <step id="2.3.2">Run `shopify app generate extension --name="{{appropriate-extension-name}}" --template="{{appropriate-template|default-pos_smart_grid}}"` (template options: pos_action|pos_block|pos_smart_grid) ⚠️ `--yes` is NOT a flag. DO NOT use it. Run the command as is.</step>
   </step>
 </step>
+<step id="3">
+  After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
+</step>
 </pos-extension-todo-flow>
 </system-instructions>
 
