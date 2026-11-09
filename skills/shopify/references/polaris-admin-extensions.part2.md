@@ -5,6 +5,7 @@ directory — `polaris-admin-extensions.md` — and you should read the ones rel
 
 ---
 ```html
+<s-switch accessibilityLabel="Toggle" checked defaultChecked details="Enable feature" error="Required" label="Active" required name="active" disabled value="on" labelAccessibilityVisibility="exclusive"></s-switch>
 <s-table loading paginate hasPreviousPage hasNextPage variant="auto"><s-table-header-row><s-table-header listSlot="primary">Product</s-table-header><s-table-header listSlot="labeled" format="currency">Price</s-table-header></s-table-header-row><s-table-body><s-table-row clickDelegate="first-cell"><s-table-cell>Blue T-Shirt</s-table-cell><s-table-cell>$29.99</s-table-cell></s-table-row></s-table-body></s-table>
 <s-text accessibilityVisibility="visible" dir="ltr" color="subdued" type="strong" tone="success" fontVariantNumeric="tabular-nums" interestFor="text-tip">Styled text</s-text>
 <s-text-area name="description" value="A great product" defaultValue="" disabled label="Description" labelAccessibilityVisibility="exclusive" placeholder="Enter description" readOnly required error="Too short" details="Product description" autocomplete="off" maxLength="500" minLength="10" rows={4}></s-text-area>

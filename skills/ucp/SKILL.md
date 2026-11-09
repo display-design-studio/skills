@@ -4,7 +4,7 @@ description: "Use when the user wants to use the UCP CLI to find, compare, buy, 
 compatibility: Requires UCP CLI
 metadata:
   author: Shopify
-  version: "1.18.0"
+  version: "1.19.0"
 ---
 
 ## Required Tool Calls (do not skip)

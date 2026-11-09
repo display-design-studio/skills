@@ -1,0 +1,76 @@
+{
+  "__metadata": {
+    "version": 0.1
+  },
+  "root": {
+    "steps": [
+      {
+        "step_id": "daily_schedule",
+        "task_id": "shopify::flow::scheduled_time",
+        "task_version": "0.1",
+        "task_type": "TRIGGER",
+        "config_field_values": [
+          {
+            "config_field_id": "recurrence",
+            "value": "[\"DTSTART;TZID=America/Toronto:20261101T090000\\nRRULE:FREQ=DAILY;INTERVAL=1;WKST=MO\"]"
+          }
+        ]
+      },
+      {
+        "step_id": "get_unfulfilled_orders",
+        "task_id": "shopify::flow::fetch::orders",
+        "task_version": "v1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "sort_by",
+            "value": "{\"sortKey\":\"CREATED_AT\",\"order\":\"ASCENDING\"}"
+          },
+          {
+            "config_field_id": "max_root_records",
+            "value": "100"
+          },
+          {
+            "config_field_id": "query",
+            "value": "created_at:<='{{ scheduledAt | date_minus: \"2 days\" }}' AND fulfillment_status:unfulfilled AND NOT status:cancelled"
+          }
+        ]
+      },
+      {
+        "step_id": "email_order_report",
+        "task_id": "shopify::flow::send_email",
+        "task_version": "2.0",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "address",
+            "value": "staff@example.com"
+          },
+          {
+            "config_field_id": "subject",
+            "value": "Unfulfilled orders report"
+          },
+          {
+            "config_field_id": "message",
+            "value": "Showing {{ getOrderData.id | size }} matching orders, up to 100, created more than two days ago.\n{% for order in getOrderData %}\n{{ order.name }}\n{% endfor %}"
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from_step_id": "daily_schedule",
+        "from_port_id": "output",
+        "to_step_id": "get_unfulfilled_orders",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "get_unfulfilled_orders",
+        "from_port_id": "output",
+        "to_step_id": "email_order_report",
+        "to_port_id": "input"
+      }
+    ],
+    "patched_fields": []
+  }
+}
