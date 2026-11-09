@@ -59,6 +59,7 @@ Think about all the steps required to generate a Shopify function:
 1. Make sure to include a src/main.rs if you are writing a Rust function.
 1. You can verify that the function builds correctly by running `shopify app function build` inside the function folder
 1. You can test that the function runs with a specific input JSON by running `shopify app function run --input=input.json --export=<export_name>` inside the function folder. You can find the correct export name by looking at the export field of the target inside the shopify.extension.toml
+1. After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
 
 IMPORTANT: DO NOT DEPLOY the function for the user. Never ever ever run `shopify app deploy`.
 

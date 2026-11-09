@@ -67,6 +67,8 @@ From here, let the developer's request flow to the appropriate Shopify
 API (e.g. `admin`, `liquid`, `functions`) and follow that API's own
 instructions. Do not duplicate their routing logic.
 
+After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
+
 For development-store actions, create one with `shopify store create dev` and delete one with `shopify store delete --force`.
 
 ### Official backend libraries

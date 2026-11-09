@@ -1,0 +1,121 @@
+{
+  "__metadata": {
+    "version": 0.1
+  },
+  "root": {
+    "steps": [
+      {
+        "step_id": "order_created",
+        "task_id": "shopify::admin::order_created",
+        "task_version": "0.1",
+        "task_type": "TRIGGER",
+        "config_field_values": []
+      },
+      {
+        "step_id": "has_presale_items",
+        "task_id": "shopify::flow::condition",
+        "task_version": "0.1",
+        "task_type": "CONDITION",
+        "config_field_values": [
+          {
+            "config_field_id": "condition",
+            "value": "(order.lineItems any? |lineItems_item| (lineItems_item.product.tags any? |tags_item| (tags_item == 'presale')))"
+          }
+        ]
+      },
+      {
+        "step_id": "each_line_item",
+        "task_id": "shopify::flow::foreach",
+        "task_version": "0.1",
+        "task_type": "FOREACH",
+        "config_field_values": [
+          {
+            "config_field_id": "listpath",
+            "value": "order.lineItems"
+          }
+        ]
+      },
+      {
+        "step_id": "is_presale_product",
+        "task_id": "shopify::flow::condition",
+        "task_version": "0.1",
+        "task_type": "CONDITION",
+        "config_field_values": [
+          {
+            "config_field_id": "condition",
+            "value": "(lineItemsForeachitem.product.tags any? |tags_item| (tags_item == 'presale'))"
+          }
+        ]
+      },
+      {
+        "step_id": "tag_presale_product",
+        "task_id": "shopify::admin::add_product_tags",
+        "task_version": "0.1",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "product_id",
+            "value": "lineItemsForeachitem.product.id"
+          },
+          {
+            "config_field_id": "tags",
+            "value": "[\"Ordered-Presale\"]"
+          }
+        ]
+      },
+      {
+        "step_id": "email_presale_summary",
+        "task_id": "shopify::flow::send_email",
+        "task_version": "2.0",
+        "task_type": "ACTION",
+        "config_field_values": [
+          {
+            "config_field_id": "address",
+            "value": "staff@example.com"
+          },
+          {
+            "config_field_id": "subject",
+            "value": "Presale order {{ order.name }}"
+          },
+          {
+            "config_field_id": "message",
+            "value": "Finished processing the presale products in order {{ order.name }}."
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from_step_id": "order_created",
+        "from_port_id": "output",
+        "to_step_id": "has_presale_items",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "has_presale_items",
+        "from_port_id": "true",
+        "to_step_id": "each_line_item",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "each_line_item",
+        "from_port_id": "loop_body",
+        "to_step_id": "is_presale_product",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "is_presale_product",
+        "from_port_id": "true",
+        "to_step_id": "tag_presale_product",
+        "to_port_id": "input"
+      },
+      {
+        "from_step_id": "each_line_item",
+        "from_port_id": "after",
+        "to_step_id": "email_presale_summary",
+        "to_port_id": "input"
+      }
+    ],
+    "patched_fields": []
+  }
+}

@@ -20,6 +20,8 @@ CLI Command to Scaffold a new Customer Account UI Extension:
 shopify app generate extension --template=customer_account_ui --name=my_customer_account_ui_extension
 ```
 
+After creating an app or adding or changing an app extension in a local project, run `shopify app dev` to test the changes in a development store. Follow the command output to continue.
+
 ## Extension Targets (use these in shopify.extension.toml)
 
 Targets decide what components/APIs can be used.
