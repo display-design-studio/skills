@@ -50,9 +50,22 @@ Compacted into `skills/sanity` (MIT): `sanity-best-practices`, `content-modeling
 - `shopify`: one skill for every Shopify developer surface (Admin, Storefront, Functions, Polaris, Hydrogen, Liquid, CLI, ...). Upstream's single skill replaces the former `shopify-*` skills. Upstream telemetry is disabled in the vendored scripts.
 - `ucp`
 
-### Vendored from `JuliusBrussee/skills`
+### Vendored from `GoogleChrome/modern-web-guidance`
+
+- `modern-web-guidance`: Chrome's modern web platform guidance (Baseline-aware HTML/CSS/JS, accessibility, performance, security, forms, UI patterns). Apache-2.0. The skill calls `npx -y modern-web-guidance@latest search|retrieve` at runtime. Not vendored: `chrome-extensions`.
+
+### Vendored from `JuliusBrussee/caveman`
+
+Apache-2.0, © Julius Brussee. Canonical Caveman repo.
 
 - `caveman`
+- `ultracave` (`/caveman ultra`)
+- `megacave` (`/caveman wenyan`)
+
+`disable-model-invocation` is stripped from `ultracave`/`megacave` (rejected by `skills-ref`); their descriptions still say to invoke them only explicitly.
+
+### Vendored from `JuliusBrussee/skills`
+
 - `deslopify`
 - `grill-me`
 - `junior-to-senior`
@@ -108,8 +121,11 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `sanity-io/agent-toolkit`: compacted into `sanity`
 - `vercel-labs/agent-skills`: `web-design-guidelines`
 - `Shopify/Shopify-AI-Toolkit`: `shopify`, `ucp`
-- `JuliusBrussee/skills`: `caveman`, `deslopify`, `grill-me`, `junior-to-senior`
+- `JuliusBrussee/caveman`: `caveman`, `ultracave`, `megacave`
+- `JuliusBrussee/skills`: `deslopify`, `grill-me`, `junior-to-senior`
 - `emilkowalski/skills`: compacted into `animation`
+- `dietrichgebert/ponytail`: `ponytail`
+- `GoogleChrome/modern-web-guidance`: `modern-web-guidance`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 

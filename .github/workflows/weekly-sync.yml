@@ -27,8 +27,14 @@ jobs:
         run: |
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "gsap=$(git -C vendor/gsap-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "vercel=$(git -C vendor/vercel-agent-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "shopify=$(git -C vendor/shopify-ai-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "caveman=$(git -C vendor/caveman-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "ponytail=$(git -C vendor/ponytail-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "mwg=$(git -C vendor/modern-web-guidance rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Update submodules to latest upstream
         run: git submodule update --remote --init --recursive
@@ -38,8 +44,14 @@ jobs:
         run: |
           echo "antfu=$(git -C vendor/antfu-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "sanity=$(git -C vendor/sanity-agent-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "gsap=$(git -C vendor/gsap-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "vercel=$(git -C vendor/vercel-agent-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "shopify=$(git -C vendor/shopify-ai-toolkit rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "julius=$(git -C vendor/julius-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "caveman=$(git -C vendor/caveman-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "ponytail=$(git -C vendor/ponytail-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "mwg=$(git -C vendor/modern-web-guidance rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Re-copy vendored skills (antfu/skills)
         run: |
@@ -48,10 +60,14 @@ jobs:
           cp -R vendor/antfu-skills/skills/vue skills/vue
           cp -R vendor/antfu-skills/skills/vite skills/vite
 
+      - name: Re-copy vendored skills (vercel-labs/agent-skills)
+        run: |
+          rm -rf skills/web-design-guidelines
+          cp -R vendor/vercel-agent-skills/skills/web-design-guidelines skills/web-design-guidelines
+
       - name: Re-copy vendored skills (JuliusBrussee/skills)
         run: |
-          rm -rf skills/caveman skills/deslopify skills/grill-me skills/junior-to-senior
-          cp -R vendor/julius-skills/skills/caveman skills/caveman
+          rm -rf skills/deslopify skills/grill-me skills/junior-to-senior
           cp -R vendor/julius-skills/skills/deslopify skills/deslopify
           cp -R vendor/julius-skills/skills/grill-me skills/grill-me
           cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
@@ -61,7 +77,7 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Re-generate vendored skills (gsap, sanity, animation, shopify)
+      - name: Re-generate vendored skills (gsap, sanity, animation, shopify, caveman, ponytail, modern-web-guidance)
         run: node scripts/sync-vendored.mjs
 
       - name: Validate updated skills
@@ -110,20 +126,28 @@ jobs:
             |--------|--------|-------|---------|
             | `antfu/skills` | `${{ steps.before.outputs.antfu }}` | `${{ steps.after.outputs.antfu }}` | ${{ steps.before.outputs.antfu != steps.after.outputs.antfu && 'yes' || 'no' }} |
             | `sanity-io/agent-toolkit` | `${{ steps.before.outputs.sanity }}` | `${{ steps.after.outputs.sanity }}` | ${{ steps.before.outputs.sanity != steps.after.outputs.sanity && 'yes' || 'no' }} |
+            | `greensock/gsap-skills` | `${{ steps.before.outputs.gsap }}` | `${{ steps.after.outputs.gsap }}` | ${{ steps.before.outputs.gsap != steps.after.outputs.gsap && 'yes' || 'no' }} |
+            | `vercel-labs/agent-skills` | `${{ steps.before.outputs.vercel }}` | `${{ steps.after.outputs.vercel }}` | ${{ steps.before.outputs.vercel != steps.after.outputs.vercel && 'yes' || 'no' }} |
+            | `Shopify/Shopify-AI-Toolkit` | `${{ steps.before.outputs.shopify }}` | `${{ steps.after.outputs.shopify }}` | ${{ steps.before.outputs.shopify != steps.after.outputs.shopify && 'yes' || 'no' }} |
             | `JuliusBrussee/skills` | `${{ steps.before.outputs.julius }}` | `${{ steps.after.outputs.julius }}` | ${{ steps.before.outputs.julius != steps.after.outputs.julius && 'yes' || 'no' }} |
+            | `JuliusBrussee/caveman` | `${{ steps.before.outputs.caveman }}` | `${{ steps.after.outputs.caveman }}` | ${{ steps.before.outputs.caveman != steps.after.outputs.caveman && 'yes' || 'no' }} |
             | `emilkowalski/skills` | `${{ steps.before.outputs.emil }}` | `${{ steps.after.outputs.emil }}` | ${{ steps.before.outputs.emil != steps.after.outputs.emil && 'yes' || 'no' }} |
+            | `dietrichgebert/ponytail` | `${{ steps.before.outputs.ponytail }}` | `${{ steps.after.outputs.ponytail }}` | ${{ steps.before.outputs.ponytail != steps.after.outputs.ponytail && 'yes' || 'no' }} |
+            | `GoogleChrome/modern-web-guidance` | `${{ steps.before.outputs.mwg }}` | `${{ steps.after.outputs.mwg }}` | ${{ steps.before.outputs.mwg != steps.after.outputs.mwg && 'yes' || 'no' }} |
 
             ### Vendored skill directories updated
 
             - `skills/nuxt`, `skills/vue`, `skills/vite` (from `antfu/skills`)
-            - `skills/caveman`, `skills/deslopify`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
+            - `skills/web-design-guidelines` (from `vercel-labs/agent-skills`)
+            - `skills/deslopify`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
             - `skills/gsap`, `skills/sanity`, `skills/animation` (compacted by `scripts/sync-vendored.mjs` from `greensock/gsap-skills`, `sanity-io/agent-toolkit`, `emilkowalski/skills`)
+            - `skills/shopify`, `skills/ucp`, `skills/caveman`, `skills/ultracave`, `skills/megacave`, `skills/ponytail`, `skills/modern-web-guidance` (copied by `scripts/sync-vendored.mjs` from `Shopify/Shopify-AI-Toolkit`, `JuliusBrussee/caveman`, `dietrichgebert/ponytail`, `GoogleChrome/modern-web-guidance`)
 
             ### Validation
 
             All skills passed `skills-ref validate` and `skills add . --list` before this PR was opened.
 
-            > First-party skills (`nuxt-sanity`, `nuxt-seo`, `ruby-on-rails`, `tailwind`) are not affected by this sync.
+            > First-party skills (e.g. `nuxt-sanity`, `shopify-development`) are not affected by this sync.
 
       - name: Run CI for pull request branch
         if: steps.changes.outputs.has_changes == 'true' && steps.create-pr.outputs.pull-request-number

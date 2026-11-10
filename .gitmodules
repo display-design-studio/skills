@@ -22,3 +22,9 @@
 [submodule "vendor/ponytail-skills"]
 	path = vendor/ponytail-skills
 	url = https://github.com/dietrichgebert/ponytail.git
+[submodule "vendor/caveman-skills"]
+	path = vendor/caveman-skills
+	url = https://github.com/JuliusBrussee/caveman.git
+[submodule "vendor/modern-web-guidance"]
+	path = vendor/modern-web-guidance
+	url = https://github.com/GoogleChrome/modern-web-guidance.git
