@@ -88,3 +88,12 @@ git diff
 - `skills/modern-web-guidance` is vendored from `GoogleChrome/modern-web-guidance` (Apache-2.0). `chrome-extensions` is not mapped.
 - `skills/animation` mixes first-party `rules/` (our conventions, Nuxt and vanilla adapters) with `references/` generated from `emilkowalski/skills` (MIT). Not mapped: `animate-expo`, `mobile-native`, `break-ui`, `pick-ui-library`, `prototype`, `ask-sonner`, `write-swift`.
 - `skills/sanity` is generated from `sanity-io/agent-toolkit` (MIT). Not mapped: `portable-text-conversion`, `portable-text-serialization`, `sanity-migration`. `nuxt-sanity` and `sanity-schema-accelerator` stay separate first-party skills.
+
+## Weekly sync auto-merge token
+
+`.github/workflows/weekly-sync.yml` opens the PR and enables auto-merge. With the default `GITHUB_TOKEN`, the PR's `pull_request` CI run stays in `action_required`, so auto-merge waits for a manual approval. Configure one of these (the workflow picks the first one set, falling back to `GITHUB_TOKEN`):
+
+- **GitHub App (preferred):** install an App on this repo with *Contents: read & write* and *Pull requests: read & write*, then set the repo variable `SYNC_APP_ID` and the secret `SYNC_APP_PRIVATE_KEY`.
+- **Fine-grained PAT:** scoped to this repo with *Contents* and *Pull requests* read & write, stored as the secret `SYNC_PAT`.
+
+Auto-merge also needs *Settings → General → Allow auto-merge* enabled and a required status check (`validate`) on `main`.

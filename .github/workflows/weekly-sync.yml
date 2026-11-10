@@ -107,12 +107,38 @@ jobs:
         if: steps.changes.outputs.has_changes == 'false'
         run: echo "All upstream submodules are already up to date. No PR will be created."
 
+      # PRs opened with GITHUB_TOKEN get their pull_request CI run stuck in
+      # "action_required", which blocks auto-merge. Prefer a GitHub App token
+      # (vars.SYNC_APP_ID + secrets.SYNC_APP_PRIVATE_KEY) or a PAT (secrets.SYNC_PAT);
+      # GITHUB_TOKEN stays as fallback.
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.changes.outputs.has_changes == 'true' && vars.SYNC_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.SYNC_APP_ID }}
+          private-key: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
+
+      - name: Pick token
+        id: token
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          PAT: ${{ secrets.SYNC_PAT }}
+        run: |
+          if [ -n "$APP_TOKEN" ] || [ -n "$PAT" ]; then
+            echo "fallback=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No SYNC_APP_ID/SYNC_PAT configured, using GITHUB_TOKEN: the PR CI run will need a manual approval before auto-merge."
+            echo "fallback=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Open pull request
         if: steps.changes.outputs.has_changes == 'true'
         id: create-pr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token || secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
           branch: automated/weekly-skills-sync
           base: main
           commit-message: "chore: weekly sync of vendored skills"
@@ -152,8 +178,9 @@ jobs:
 
             > First-party skills (e.g. `nuxt-sanity`, `shopify-development`) are not affected by this sync.
 
+      # Only needed with GITHUB_TOKEN: its PR events do not start CI normally.
       - name: Run CI for pull request branch
-        if: steps.changes.outputs.has_changes == 'true' && steps.create-pr.outputs.pull-request-number
+        if: steps.changes.outputs.has_changes == 'true' && steps.create-pr.outputs.pull-request-number && steps.token.outputs.fallback == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -164,7 +191,7 @@ jobs:
       - name: Enable auto-merge
         if: steps.changes.outputs.has_changes == 'true' && steps.create-pr.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
         run: |
           gh pr merge --auto --rebase \
             --repo "${{ github.repository }}" \
