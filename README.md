@@ -50,6 +50,10 @@ Compacted into `skills/sanity` (MIT): `sanity-best-practices`, `content-modeling
 - `shopify`: one skill for every Shopify developer surface (Admin, Storefront, Functions, Polaris, Hydrogen, Liquid, CLI, ...). Upstream's single skill replaces the former `shopify-*` skills. Upstream telemetry is disabled in the vendored scripts.
 - `ucp`
 
+### Vendored from `anthropics/skills`
+
+- `frontend-design`: aesthetic direction, typography and non-templated visual choices for new or reshaped UI. Apache-2.0 (see its `LICENSE.txt`).
+
 ### Vendored from `GoogleChrome/modern-web-guidance`
 
 - `modern-web-guidance`: Chrome's modern web platform guidance (Baseline-aware HTML/CSS/JS, accessibility, performance, security, forms, UI patterns). Apache-2.0. The skill calls `npx -y modern-web-guidance@latest search|retrieve` at runtime. Not vendored: `chrome-extensions`.
@@ -126,6 +130,7 @@ Use the vendor lists in [Included skills](#included-skills) above to get the exa
 - `emilkowalski/skills`: compacted into `animation`
 - `dietrichgebert/ponytail`: `ponytail`
 - `GoogleChrome/modern-web-guidance`: `modern-web-guidance`
+- `anthropics/skills`: `frontend-design`
 
 Alternatively, copy the vendor's skills directly from this repo's `vendor/` submodules (read-only mirrors of upstream), the same way `SYNC.md` re-copies them into `skills/`:
 

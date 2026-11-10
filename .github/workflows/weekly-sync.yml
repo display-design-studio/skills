@@ -35,6 +35,7 @@ jobs:
           echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "ponytail=$(git -C vendor/ponytail-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "mwg=$(git -C vendor/modern-web-guidance rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "anthropic=$(git -C vendor/anthropic-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Update submodules to latest upstream
         run: git submodule update --remote --init --recursive
@@ -52,6 +53,7 @@ jobs:
           echo "emil=$(git -C vendor/emil-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "ponytail=$(git -C vendor/ponytail-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "mwg=$(git -C vendor/modern-web-guidance rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "anthropic=$(git -C vendor/anthropic-skills rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Re-copy vendored skills (antfu/skills)
         run: |
@@ -77,7 +79,7 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Re-generate vendored skills (gsap, sanity, animation, shopify, caveman, ponytail, modern-web-guidance)
+      - name: Re-generate vendored skills (gsap, sanity, animation, shopify, caveman, ponytail, modern-web-guidance, frontend-design)
         run: node scripts/sync-vendored.mjs
 
       - name: Validate updated skills
@@ -134,6 +136,7 @@ jobs:
             | `emilkowalski/skills` | `${{ steps.before.outputs.emil }}` | `${{ steps.after.outputs.emil }}` | ${{ steps.before.outputs.emil != steps.after.outputs.emil && 'yes' || 'no' }} |
             | `dietrichgebert/ponytail` | `${{ steps.before.outputs.ponytail }}` | `${{ steps.after.outputs.ponytail }}` | ${{ steps.before.outputs.ponytail != steps.after.outputs.ponytail && 'yes' || 'no' }} |
             | `GoogleChrome/modern-web-guidance` | `${{ steps.before.outputs.mwg }}` | `${{ steps.after.outputs.mwg }}` | ${{ steps.before.outputs.mwg != steps.after.outputs.mwg && 'yes' || 'no' }} |
+            | `anthropics/skills` | `${{ steps.before.outputs.anthropic }}` | `${{ steps.after.outputs.anthropic }}` | ${{ steps.before.outputs.anthropic != steps.after.outputs.anthropic && 'yes' || 'no' }} |
 
             ### Vendored skill directories updated
 
@@ -141,7 +144,7 @@ jobs:
             - `skills/web-design-guidelines` (from `vercel-labs/agent-skills`)
             - `skills/deslopify`, `skills/grill-me`, `skills/junior-to-senior` (from `JuliusBrussee/skills`)
             - `skills/gsap`, `skills/sanity`, `skills/animation` (compacted by `scripts/sync-vendored.mjs` from `greensock/gsap-skills`, `sanity-io/agent-toolkit`, `emilkowalski/skills`)
-            - `skills/shopify`, `skills/ucp`, `skills/caveman`, `skills/ultracave`, `skills/megacave`, `skills/ponytail`, `skills/modern-web-guidance` (copied by `scripts/sync-vendored.mjs` from `Shopify/Shopify-AI-Toolkit`, `JuliusBrussee/caveman`, `dietrichgebert/ponytail`, `GoogleChrome/modern-web-guidance`)
+            - `skills/shopify`, `skills/ucp`, `skills/caveman`, `skills/ultracave`, `skills/megacave`, `skills/ponytail`, `skills/modern-web-guidance`, `skills/frontend-design` (copied by `scripts/sync-vendored.mjs` from `Shopify/Shopify-AI-Toolkit`, `JuliusBrussee/caveman`, `dietrichgebert/ponytail`, `GoogleChrome/modern-web-guidance`, `anthropics/skills`)
 
             ### Validation
 

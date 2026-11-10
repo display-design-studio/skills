@@ -14,6 +14,7 @@ This repo keeps upstream sources as git submodules in `vendor/` and copies selec
 - `vendor/emil-skills` -> `https://github.com/emilkowalski/skills`
 - `vendor/ponytail-skills` -> `https://github.com/dietrichgebert/ponytail`
 - `vendor/modern-web-guidance` -> `https://github.com/GoogleChrome/modern-web-guidance`
+- `vendor/anthropic-skills` -> `https://github.com/anthropics/skills`
 
 ## Sync workflow
 
@@ -44,7 +45,7 @@ cp -R vendor/julius-skills/skills/junior-to-senior skills/junior-to-senior
 
 ```
 
-`caveman`, `ultracave`, `megacave`, `ponytail` and `modern-web-guidance` are copied by `scripts/sync-vendored.mjs` (mode `copy`, see below), which also strips frontmatter keys `skills-ref` rejects.
+`caveman`, `ultracave`, `megacave`, `ponytail`, `modern-web-guidance` and `frontend-design` are copied by `scripts/sync-vendored.mjs` (mode `copy`, see below), which also strips frontmatter keys `skills-ref` rejects.
 
 ### Compacted skills (one skill per domain)
 
@@ -57,7 +58,7 @@ node scripts/sync-vendored.mjs --check  # fail if skills/<group> drifts from ven
 
 Mode `copy` is for a skill upstream already ships as one unit (Shopify): the script copies `skills/<name>`, strips frontmatter keys `skills-ref` rejects (`hooks`, `requires_bin`, `command`), removes the telemetry hook scripts and prepends `process.env.OPT_OUT_INSTRUMENTATION = 'true'` to every `scripts/*.mjs`, so the upstream usage reporting (which includes prompt text) stays off. Re-check this after each Shopify sync: run a script with `SKILL_TELEMETRY_TEST_MODE=1` and confirm it prints no `TEST_TELEMETRY_BODY`.
 
-Currently generated: `shopify` and `ucp` (copy, from `vendor/shopify-ai-toolkit`; upstream moved its old per-topic skills to `deprecated/`), `caveman`, `ultracave`, `megacave` (copy, from `vendor/caveman-skills`, `disable-model-invocation` stripped), `ponytail` (copy, from `vendor/ponytail-skills`, `argument-hint` stripped) and `modern-web-guidance` (copy, from `vendor/modern-web-guidance`).
+Currently generated: `shopify` and `ucp` (copy, from `vendor/shopify-ai-toolkit`; upstream moved its old per-topic skills to `deprecated/`), `caveman`, `ultracave`, `megacave` (copy, from `vendor/caveman-skills`, `disable-model-invocation` stripped), `ponytail` (copy, from `vendor/ponytail-skills`, `argument-hint` stripped) `modern-web-guidance` (copy, from `vendor/modern-web-guidance`) and `frontend-design` (copy, from `vendor/anthropic-skills`; the other Anthropic skills are `ignore`).
 
 Currently compacted: `gsap` (from `vendor/gsap-skills`), `sanity` (from `vendor/sanity-agent-toolkit`: sanity-best-practices, content-modeling, seo-aeo, content-experimentation) and `animation` (from `vendor/emil-skills`, next to our first-party `rules/`). Display studio additions live in `scripts/patches/` and are re-applied automatically (`## Debug` in `references/core.md`, `## Helper Functions` in `references/utils.md`). Never edit `references/` by hand. CI runs `--check`; a new upstream skill not listed in `vendor-map.json` only prints a warning, a removed or renamed one fails the sync.
 
