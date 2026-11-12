@@ -72,5 +72,94 @@
       "scripts/track-telemetry.ps1"
     ],
     "disableTelemetry": true
+  },
+  "caveman": {
+    "mode": "copy",
+    "vendor": "caveman-skills",
+    "skills": [
+      "caveman",
+      "ultracave",
+      "megacave"
+    ],
+    "stripFrontmatter": [
+      "disable-model-invocation"
+    ],
+    "ignore": [
+      "cavecrew",
+      "caveman-commit",
+      "caveman-compress",
+      "caveman-discover",
+      "caveman-evidence-review",
+      "caveman-explore",
+      "caveman-help",
+      "caveman-learn",
+      "caveman-manage",
+      "caveman-optimize",
+      "caveman-review",
+      "caveman-setup",
+      "caveman-stats",
+      "investigate-first",
+      "lean-build",
+      "migration",
+      "safe-refactor",
+      "surgical-patch",
+      "verify-and-stop",
+      "generated",
+      "native"
+    ]
+  },
+  "ponytail": {
+    "mode": "copy",
+    "vendor": "ponytail-skills",
+    "skills": [
+      "ponytail"
+    ],
+    "stripFrontmatter": [
+      "argument-hint"
+    ],
+    "ignore": [
+      "ponytail-audit",
+      "ponytail-debt",
+      "ponytail-gain",
+      "ponytail-help",
+      "ponytail-review"
+    ]
+  },
+  "modern-web-guidance": {
+    "mode": "copy",
+    "vendor": "modern-web-guidance",
+    "skills": [
+      "modern-web-guidance"
+    ],
+    "ignore": [
+      "chrome-extensions"
+    ]
+  },
+  "frontend-design": {
+    "mode": "copy",
+    "vendor": "anthropic-skills",
+    "skills": [
+      "frontend-design"
+    ],
+    "ignore": [
+      "academy-guide",
+      "algorithmic-art",
+      "brand-guidelines",
+      "canvas-design",
+      "claude-api",
+      "discernment-nudge",
+      "doc-coauthoring",
+      "docx",
+      "internal-comms",
+      "mcp-builder",
+      "pdf",
+      "pptx",
+      "skill-creator",
+      "slack-gif-creator",
+      "theme-factory",
+      "web-artifacts-builder",
+      "webapp-testing",
+      "xlsx"
+    ]
   }
 }
