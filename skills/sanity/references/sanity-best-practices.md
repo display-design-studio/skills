@@ -33,6 +33,13 @@ Reference these guidelines when:
 - On other plans, use a dedicated video service: install `sanity-plugin-mux-input` to upload and manage videos in your Mux account from the Studio, or host video on a platform such as YouTube or Vimeo and store only the embed URL in Sanity.
 - Small clips and short previews in a `file` field are acceptable, but any user-facing video at scale must go through Media Library or a streaming service.
 
+## Studio Edit Links
+
+- Before building a URL that opens a document or a field in Studio (an "Edit in Studio" button, a link in a message or report), read https://www.sanity.io/docs/visual-editing/studio-edit-intent-links.md. Use the intent form, `{studioUrl}/intent/edit/id={id};type={type};path={path}`: it opens the document wherever it sits in the Structure tree, and `path` focuses one field.
+- Encode the `path` value with `encodeURIComponent`. Studio splits each parameter on `=`, so an unencoded `body[_key=="abc"]` is cut short at `body[_key` and the link focuses the wrong field.
+- Select array items by `_key`, not by index, in links that are stored or sent. Path syntax: https://www.sanity.io/docs/studio/how-form-paths-work.md
+- With only a Content Source Map and no document ID, use `resolveEditUrl` from `@sanity/client/csm` instead of building the URL by hand.
+
 ## Quick Reference
 
 ### Integration Guides
@@ -40,7 +47,7 @@ Reference these guidelines when:
 - `get-started` - Interactive onboarding for new Sanity projects
 - `nextjs` - Next.js App Router, Live Content API, standalone Studio
 - `nuxt` - Nuxt integration with @nuxtjs/sanity
-- `angular` - Angular integration with @sanity/client, signals, resource API
+- `angular` - Angular integration with @sanity/client, signals, resource API, Visual Editing
 - `astro` - Astro integration with @sanity/astro
 - `remix` - React Router / Remix integration
 - `svelte` - SvelteKit integration with @sanity/svelte-loader
